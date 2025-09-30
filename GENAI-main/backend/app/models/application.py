@@ -54,6 +54,7 @@ class Application(Base):
     scores = relationship("ApplicationScore", back_populates="application", cascade="all, delete-orphan")
     interview_schedule = relationship("InterviewSchedule", back_populates="application", uselist=False, foreign_keys="InterviewSchedule.application_id")
     interview_review = relationship("InterviewReview", back_populates="application", uselist=False, foreign_keys="InterviewReview.application_id")
+    resume_update_request = relationship("ResumeUpdateRequest", back_populates="application", uselist=False, cascade="all, delete-orphan")
 
 class ApplicationScore(Base):
     __tablename__ = "application_scores"

@@ -45,6 +45,11 @@ app.include_router(applications.router, prefix="/api/applications", tags=["Appli
 app.include_router(interviews.router, prefix="/api/interviews", tags=["Interviews"])
 app.include_router(interviewer_auth.router, prefix="/api/interviewer", tags=["Interviewer Authentication"])
 
+# Import and include resume update router
+from .api import resume_update, scheduler
+app.include_router(resume_update.router, prefix="/api", tags=["Resume Update"])
+app.include_router(scheduler.router, prefix="/api", tags=["Scheduler"])
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():

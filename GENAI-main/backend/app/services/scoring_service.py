@@ -114,7 +114,8 @@ class ScoringService:
         elif final_score >= self.requalify_threshold:
             return "requalification_needed", "under_review"
         else:
-            return "rejected", "rejected"
+            # Score < 60: Trigger LLM evaluation for potential resume update flow
+            return "llm_evaluation_needed", "pending_llm_evaluation"
     
     def generate_ai_feedback(self, job: Job, application: Application, scores: Dict[str, float]) -> str:
         """Generate AI feedback for the candidate"""
@@ -197,14 +198,43 @@ class ScoringService:
             
             # Update application status based on score
             decision, status = self.determine_candidate_status(final_score)
-            application.status = status
-            db.commit()
             
-            # Trigger selection flow for high-scoring candidates (≥70)
+            # Handle different scoring outcomes
             if decision == "auto_selected":
+                # Score ≥ 70: Proceed with normal selection flow
+                application.status = status
+                db.commit()
+                
                 from .interview_service import InterviewService
                 interview_service = InterviewService()
                 await interview_service.trigger_selection_flow(db, application)
+                
+            elif decision == "llm_evaluation_needed":
+                # Score < 70: Trigger LLM evaluation and potential resume update flow
+                from .resume_update_service import resume_update_service
+                
+                # Check if this is a re-scoring (already has update request)
+                from ..models.resume_update_tracking import ResumeUpdateRequest
+                existing_request = db.query(ResumeUpdateRequest).filter_by(application_id=application.id).first()
+                
+                if existing_request:
+                    # This is a re-scoring after resume update, don't create new request
+                    application.status = status
+                    db.commit()
+                else:
+                    # Initial scoring, initiate LLM evaluation and potential resume update flow
+                    flow_initiated = await resume_update_service.initiate_resume_update_flow(
+                        db, application, final_score
+                    )
+                    
+                    if not flow_initiated:
+                        # LLM rejected or flow failed, set to rejected
+                        application.status = "rejected"
+                        db.commit()
+            else:
+                # Other statuses (under_review, rejected)
+                application.status = status
+                db.commit()
             
             return application_score
             

@@ -31,6 +31,7 @@ import ApplyJob from './pages/public/ApplyJob';
 import ApplicationStatus from './pages/public/ApplicationStatus';
 import SlotSelection from './pages/public/SlotSelection';
 import InterviewerReview from './pages/public/InterviewerReview';
+import ResumeUpdate from './pages/ResumeUpdate';
 
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -60,6 +61,7 @@ function App() {
               <Route path="/application-status" element={<ApplicationStatus />} />
               <Route path="/select-slot/:applicationId" element={<SlotSelection />} />
               <Route path="/interviewer-review/:token" element={<InterviewerReview />} />
+              <Route path="/update-resume/:referenceNumber" element={<ResumeUpdate />} />
             </Route>
 
             {/* Auth Routes */}
