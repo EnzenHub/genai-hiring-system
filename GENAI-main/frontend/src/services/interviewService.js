@@ -43,6 +43,12 @@ export const interviewService = {
     return response.data;
   },
 
+  // Get all interview reviews for an application
+  async getAllInterviewReviews(applicationId) {
+    const response = await api.get(`/api/interviews/reviews/${applicationId}`);
+    return response.data;
+  },
+
   // Get review template
   async getReviewTemplate(applicationId) {
     const response = await api.get(`/api/interviews/review-template/${applicationId}`);

@@ -74,6 +74,25 @@ async def create_job(
             detail="Only Account Managers can create jobs"
         )
     
+    # Handle company assignment
+    company_id = current_user.company_id
+    
+    # If user doesn't have a company assigned, assign the first available company
+    # This is a temporary solution for users created without company assignment
+    if company_id is None:
+        from ..models.company import Company
+        first_company = db.query(Company).first()
+        if not first_company:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No companies available. Please create a company first."
+            )
+        company_id = first_company.id
+        
+        # Optionally update the user's company_id for future use
+        current_user.company_id = company_id
+        db.commit()
+    
     # Create job
     db_job = Job(
         title=job_data.title,
@@ -84,7 +103,7 @@ async def create_job(
         job_type=job_data.job_type,
         experience_level=job_data.experience_level,
         salary_range=job_data.salary_range,
-        company_id=current_user.company_id,
+        company_id=company_id,
         created_by=current_user.id,
         status="pending_approval"  # Jobs need HR approval before publishing
     )

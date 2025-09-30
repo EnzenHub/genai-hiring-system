@@ -14,6 +14,7 @@ from ..services.scoring_service import ScoringService
 from ..utils.file_utils import save_uploaded_file, validate_file_type
 from ..utils.resume_parser import parse_resume
 from ..utils.email import send_application_confirmation, send_shortlist_notification
+from ..utils.final_decision_emails import send_candidate_hired_email, send_candidate_rejected_email
 from .auth import get_current_user
 import logging
 
@@ -202,7 +203,7 @@ async def get_applications(
                 "cover_letter": app.cover_letter,
                 "additional_info": app.additional_info,
                 "resume_filename": app.resume_filename,
-                "resume_url": f"/api/files/{app.resume_filename}" if app.resume_filename else None,
+                "resume_url": f"/uploads/{app.resume_filename}" if app.resume_filename else None,
                 "created_at": app.created_at,
                 "updated_at": app.updated_at,
                 "processed_at": getattr(app, 'processed_at', None),
@@ -330,7 +331,7 @@ async def get_application(
         "cover_letter": application.cover_letter,
         "additional_info": application.additional_info,
         "resume_filename": application.resume_filename,
-        "resume_url": f"/api/files/{application.resume_filename}" if application.resume_filename else None,
+        "resume_url": f"/uploads/{application.resume_filename}" if application.resume_filename else None,
         "resume_text": None,  # Would need to parse if needed
         "created_at": application.created_at,
         "updated_at": application.updated_at,
@@ -548,10 +549,32 @@ async def make_final_decision(
         application.status = new_status
         db.commit()
         
-        # TODO: Send final decision email to candidate
+        # Send final decision email to candidate
+        company_name = application.job.company.name if application.job.company else "Our Company"
+        
+        try:
+            if new_status == "hired":
+                send_candidate_hired_email(
+                    candidate_email=application.email,
+                    candidate_name=application.full_name,
+                    job_title=application.job.title,
+                    company_name=company_name
+                )
+                logger.info(f"Hired email sent to {application.email}")
+            elif new_status == "rejected":
+                send_candidate_rejected_email(
+                    candidate_email=application.email,
+                    candidate_name=application.full_name,
+                    job_title=application.job.title,
+                    company_name=company_name
+                )
+                logger.info(f"Rejection email sent to {application.email}")
+        except Exception as e:
+            logger.error(f"Failed to send final decision email to {application.email}: {e}")
+            # Don't fail the whole operation if email fails
         
         return {
-            "message": f"Final decision made: {new_status}",
+            "message": f"Final decision made: {new_status}. Notification email sent to candidate.",
             "status": application.status
         }
         

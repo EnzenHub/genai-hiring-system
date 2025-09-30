@@ -12,9 +12,12 @@ class InterviewReview(Base):
     
     # Review Source
     interviewer_email = Column(String(255), nullable=True)
+    interviewer_name = Column(String(255), nullable=True)
+    interviewer_type = Column(String(50), nullable=True)  # 'primary' or 'backup'
     review_email_subject = Column(String(500), nullable=True)
     review_email_body = Column(Text, nullable=True)
     review_received_at = Column(DateTime(timezone=True), nullable=True)
+    review_submitted_at = Column(DateTime(timezone=True), nullable=True)
     
     # Parsed Scores (1-10 scale)
     technical_score = Column(Integer, nullable=True)
@@ -24,6 +27,7 @@ class InterviewReview(Base):
     leadership_potential = Column(Integer, nullable=True)
     
     # Overall Assessment
+    overall_rating = Column(Integer, nullable=True)  # 1-10 scale
     overall_recommendation = Column(String(20), nullable=True)  # hire, reject, maybe
     strengths = Column(Text, nullable=True)
     areas_for_improvement = Column(Text, nullable=True)

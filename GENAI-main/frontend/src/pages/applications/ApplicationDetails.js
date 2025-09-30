@@ -30,6 +30,7 @@ const ApplicationDetails = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [interviewDetails, setInterviewDetails] = useState(null);
   const [reviewData, setReviewData] = useState(null);
+  const [interviewReviews, setInterviewReviews] = useState([]);
 
   const loadApplication = useCallback(async () => {
     try {
@@ -117,9 +118,10 @@ const ApplicationDetails = () => {
   const handleFinalDecision = async (decision) => {
     try {
       setUpdating(true);
-      await interviewService.makeFinalDecision(id, decision);
+      const result = await interviewService.makeFinalDecision(id, decision);
       await loadApplication(); // Reload data
       setError('');
+      alert(result.message || `Candidate ${decision === 'hired' ? 'hired' : 'rejected'} successfully! Email notification sent.`);
     } catch (err) {
       setError('Failed to make final decision');
       console.error('Error making final decision:', err);
@@ -142,6 +144,11 @@ const ApplicationDetails = () => {
 
       if (application && application.status === 'review_received') {
         try {
+          // Load all interview reviews
+          const reviewsData = await interviewService.getAllInterviewReviews(id);
+          setInterviewReviews(reviewsData.reviews || []);
+          
+          // Keep the old single review for backward compatibility
           const review = await interviewService.getInterviewReview(id);
           setReviewData(review);
         } catch (err) {
@@ -404,39 +411,39 @@ const ApplicationDetails = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-3 lg:col-span-2 space-y-4 lg:space-y-6">
           {/* AI Analysis */}
           {(application.ai_score || application.match_score || application.ats_score) && (
             <div className="card">
-              <h2 className="text-lg font-semibold mb-4">AI Analysis</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <h2 className="text-lg font-semibold mb-3">AI Analysis</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 {application.ai_score && (
-                  <div className={`p-4 rounded-lg ${getScoreColor(application.ai_score)}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Overall AI Score</span>
-                      <StarIcon className="h-5 w-5" />
+                  <div className={`p-3 rounded-lg ${getScoreColor(application.ai_score)}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">Overall AI Score</span>
+                      <StarIcon className="h-4 w-4" />
                     </div>
-                    <div className="text-2xl font-bold mt-1">{application.ai_score}%</div>
+                    <div className="text-xl font-bold">{application.ai_score}%</div>
                   </div>
                 )}
                 {application.match_score && (
-                  <div className={`p-4 rounded-lg ${getScoreColor(application.match_score)}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Match Score</span>
-                      <CheckCircleIcon className="h-5 w-5" />
+                  <div className={`p-3 rounded-lg ${getScoreColor(application.match_score)}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">Match Score</span>
+                      <CheckCircleIcon className="h-4 w-4" />
                     </div>
-                    <div className="text-2xl font-bold mt-1">{application.match_score}%</div>
+                    <div className="text-xl font-bold">{application.match_score}%</div>
                   </div>
                 )}
                 {application.ats_score && (
-                  <div className={`p-4 rounded-lg ${getScoreColor(application.ats_score)}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">ATS Score</span>
-                      <DocumentTextIcon className="h-5 w-5" />
+                  <div className={`p-3 rounded-lg ${getScoreColor(application.ats_score)}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">ATS Score</span>
+                      <DocumentTextIcon className="h-4 w-4" />
                     </div>
-                    <div className="text-2xl font-bold mt-1">{application.ats_score}%</div>
+                    <div className="text-xl font-bold">{application.ats_score}%</div>
                   </div>
                 )}
               </div>
@@ -493,50 +500,52 @@ const ApplicationDetails = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Candidate Info */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Candidate Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <div className="text-sm text-gray-500">Name</div>
-                  <div className="font-medium">{application.candidate_name}</div>
+            <h3 className="text-lg font-semibold mb-3">Candidate Information</h3>
+            <div className="space-y-2.5">
+              <div className="flex items-start">
+                <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Name</div>
+                  <div className="font-medium text-sm truncate">{application.candidate_name}</div>
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <EnvelopeIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <div className="text-sm text-gray-500">Email</div>
-                  <div className="font-medium">{application.candidate_email}</div>
+              <div className="flex items-start">
+                <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Email</div>
+                  <div className="font-medium text-sm truncate" title={application.candidate_email}>
+                    {application.candidate_email}
+                  </div>
                 </div>
               </div>
 
               {application.candidate_phone && (
-                <div className="flex items-center">
-                  <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-500">Phone</div>
-                    <div className="font-medium">{application.candidate_phone}</div>
+                <div className="flex items-start">
+                  <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide">Phone</div>
+                    <div className="font-medium text-sm">{application.candidate_phone}</div>
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center">
-                <BriefcaseIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <div className="text-sm text-gray-500">Applied Position</div>
-                  <div className="font-medium">{application.job_title}</div>
+              <div className="flex items-start">
+                <BriefcaseIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Position</div>
+                  <div className="font-medium text-sm">{application.job_title}</div>
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <CalendarDaysIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <div>
-                  <div className="text-sm text-gray-500">Application Date</div>
-                  <div className="font-medium">
+              <div className="flex items-start">
+                <CalendarDaysIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-gray-500 uppercase tracking-wide">Applied</div>
+                  <div className="font-medium text-sm">
                     {new Date(application.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -547,18 +556,20 @@ const ApplicationDetails = () => {
           {/* Resume Download */}
           {application.resume_filename && (
             <div className="card">
-              <h3 className="text-lg font-semibold mb-3">Resume</h3>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <DocumentTextIcon className="h-6 w-6 text-gray-600 mr-3" />
-                  <div>
-                    <div className="font-medium text-sm">{application.resume_filename}</div>
-                    <div className="text-xs text-gray-500">Resume file</div>
+              <h3 className="text-lg font-semibold mb-2">Resume</h3>
+              <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="flex items-center min-w-0 flex-1">
+                  <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-2.5 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-medium text-sm truncate" title={application.resume_filename}>
+                      {application.resume_filename.split('-').slice(-1)[0] || 'Resume File'}
+                    </div>
+                    <div className="text-xs text-gray-500">PDF Document</div>
                   </div>
                 </div>
                 <button
                   onClick={() => window.open(application.resume_url, '_blank')}
-                  className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md"
+                  className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors flex-shrink-0"
                   title="View Resume"
                 >
                   <EyeIcon className="h-4 w-4" />
@@ -579,37 +590,37 @@ const ApplicationDetails = () => {
 
           {/* Application Timeline */}
           <div className="card">
-            <h3 className="text-lg font-semibold mb-3">Timeline</h3>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                <div>
+            <h3 className="text-lg font-semibold mb-2">Timeline</h3>
+            <div className="space-y-2.5">
+              <div className="flex items-start">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                <div className="min-w-0">
                   <div className="text-sm font-medium">Application Submitted</div>
                   <div className="text-xs text-gray-500">
-                    {new Date(application.created_at).toLocaleString()}
+                    {new Date(application.created_at).toLocaleDateString()} at {new Date(application.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </div>
                 </div>
               </div>
               
               {application.processed_at && (
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></div>
-                  <div>
+                <div className="flex items-start">
+                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                  <div className="min-w-0">
                     <div className="text-sm font-medium">AI Processing Complete</div>
                     <div className="text-xs text-gray-500">
-                      {new Date(application.processed_at).toLocaleString()}
+                      {new Date(application.processed_at).toLocaleDateString()} at {new Date(application.processed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </div>
                   </div>
                 </div>
               )}
               
               {application.updated_at !== application.created_at && (
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                  <div>
+                <div className="flex items-start">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                  <div className="min-w-0">
                     <div className="text-sm font-medium">Status Updated</div>
                     <div className="text-xs text-gray-500">
-                      {new Date(application.updated_at).toLocaleString()}
+                      {new Date(application.updated_at).toLocaleDateString()} at {new Date(application.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </div>
                   </div>
                 </div>
@@ -639,8 +650,39 @@ const ApplicationDetails = () => {
         </div>
       )}
 
-      {/* Review Data Section */}
-      {reviewData && (
+      {/* Interview Reviews Section */}
+      {interviewReviews.length > 0 && (
+        <div className="mt-6">
+          <div className="card">
+            <h3 className="text-lg font-semibold mb-4">Interview Reviews ({interviewReviews.length})</h3>
+            <div className="space-y-6">
+              {interviewReviews.map((review, index) => (
+                <div key={review.id || index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-medium text-gray-900">
+                      {review.interviewer_name || review.interviewer_email}
+                      <span className="ml-2 text-sm text-gray-500">
+                        ({review.interviewer_type === 'primary' ? 'Primary' : 'Backup'} Interviewer)
+                      </span>
+                    </h4>
+                    <span className="text-xs text-gray-500">
+                      {review.review_submitted_at ? new Date(review.review_submitted_at).toLocaleString() : 'N/A'}
+                    </span>
+                  </div>
+                  <InterviewReviewCard 
+                    review={review}
+                    application={application}
+                    hideHeader={true}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback: Single Review Data Section (for backward compatibility) */}
+      {reviewData && interviewReviews.length === 0 && (
         <div className="mt-6">
           <InterviewReviewCard 
             review={reviewData}
@@ -759,73 +801,84 @@ const ScheduleInterviewModal = ({ application, onClose, onSchedule, updating }) 
 const InterviewDetailsCard = ({ details, application }) => {
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold mb-4">Interview Details</h3>
+      <h3 className="text-lg font-semibold mb-3">Interview Details</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Selected Date</label>
-          <p className="text-gray-900">{details.selected_slot_date ? new Date(details.selected_slot_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Not selected'}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Date & Time</label>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+              <p className="text-sm font-medium text-gray-900">
+                {details.selected_slot_date ? new Date(details.selected_slot_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Not selected'}
+              </p>
+              <span className="hidden sm:inline text-gray-400">•</span>
+              <p className="text-sm text-gray-700">
+                {details.selected_slot_time ? new Date(`2000-01-01T${details.selected_slot_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'Not selected'}
+              </p>
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Duration</label>
+            <p className="text-sm text-gray-900">{details.interview_duration || 60} minutes</p>
+          </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Selected Time</label>
-          <p className="text-gray-900">{details.selected_slot_time ? new Date(`2000-01-01T${details.selected_slot_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'Not selected'}</p>
+        <div className="space-y-2">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Primary Interviewer</label>
+            <p className="text-sm font-medium text-gray-900 truncate" title={details.primary_interviewer_name}>
+              {details.primary_interviewer_name || 'Not assigned'}
+            </p>
+            <p className="text-xs text-gray-600 truncate" title={details.primary_interviewer_email}>
+              {details.primary_interviewer_email}
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Backup Interviewer</label>
+            <p className="text-sm font-medium text-gray-900 truncate" title={details.backup_interviewer_name}>
+              {details.backup_interviewer_name || 'Not assigned'}
+            </p>
+            <p className="text-xs text-gray-600 truncate" title={details.backup_interviewer_email}>
+              {details.backup_interviewer_email}
+            </p>
+          </div>
         </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Primary Interviewer</label>
-          <p className="text-gray-900">{details.primary_interviewer_name || 'Not assigned'}</p>
-          <p className="text-sm text-gray-600">{details.primary_interviewer_email}</p>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Backup Interviewer</label>
-          <p className="text-gray-900">{details.backup_interviewer_name || 'Not assigned'}</p>
-          <p className="text-sm text-gray-600">{details.backup_interviewer_email}</p>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Duration</label>
-          <p className="text-gray-900">{details.interview_duration || 60} minutes</p>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Status</label>
-          <p className="text-gray-900 capitalize">{details.status}</p>
-        </div>
-        
-        {details.google_meet_link && (
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Google Meet</label>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      </div>
+      
+      {details.google_meet_link && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <div className="ml-3">
+                <div className="ml-2">
                   <p className="text-sm font-medium text-green-800">Video Call Ready</p>
-                  <a 
-                    href={details.google_meet_link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-green-600 hover:text-green-500 underline"
-                  >
-                    Join Google Meet
-                  </a>
                 </div>
               </div>
+              <a 
+                href={details.google_meet_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+              >
+                Join Meeting
+              </a>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
 // Interview Review Card Component
-const InterviewReviewCard = ({ review, application }) => {
+const InterviewReviewCard = ({ review, application, hideHeader = false }) => {
   const getScoreColor = (score) => {
     if (score >= 8) return 'text-green-600';
     if (score >= 6) return 'text-yellow-600';
@@ -843,8 +896,8 @@ const InterviewReviewCard = ({ review, application }) => {
   };
 
   return (
-    <div className="card">
-      <h3 className="text-lg font-semibold mb-4">Interview Review</h3>
+    <div className={hideHeader ? "" : "card"}>
+      {!hideHeader && <h3 className="text-lg font-semibold mb-4">Interview Review</h3>}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -895,12 +948,14 @@ const InterviewReviewCard = ({ review, application }) => {
               </span>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Final Interview Score</label>
-              <p className="text-lg font-semibold text-gray-900">
-                {application.final_interview_score}%
-              </p>
-            </div>
+            {review.overall_rating && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Overall Rating</label>
+                <p className={`text-lg font-semibold ${getScoreColor(review.overall_rating)}`}>
+                  {review.overall_rating}/10
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -926,10 +981,13 @@ const InterviewReviewCard = ({ review, application }) => {
         </div>
       )}
       
-      <div className="mt-4 pt-4 border-t text-sm text-gray-500">
-        <p>Review received: {new Date(review.review_received_at).toLocaleString()}</p>
-        <p>Interviewer: {review.interviewer_email}</p>
-      </div>
+      {!hideHeader && (
+        <div className="mt-4 pt-4 border-t text-sm text-gray-500">
+          <p>Review submitted: {review.review_submitted_at ? new Date(review.review_submitted_at).toLocaleString() : 'N/A'}</p>
+          <p>Interviewer: {review.interviewer_name || review.interviewer_email}</p>
+          {review.interviewer_type && <p>Role: {review.interviewer_type === 'primary' ? 'Primary' : 'Backup'} Interviewer</p>}
+        </div>
+      )}
     </div>
   );
 };

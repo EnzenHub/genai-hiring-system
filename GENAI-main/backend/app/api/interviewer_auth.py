@@ -139,15 +139,15 @@ async def submit_interview_review(
             interviewer_email=token_record.interviewer_email,
             interviewer_name=token_record.interviewer_name,
             interviewer_type=token_record.interviewer_type,
-            technical_skills_score=review.technical_skills,
+            technical_score=review.technical_skills,
             communication_score=review.communication,
             problem_solving_score=review.problem_solving,
             cultural_fit_score=review.cultural_fit,
-            leadership_score=review.leadership_potential,
+            leadership_potential=review.leadership_potential,
             overall_rating=review.overall_rating,
+            overall_recommendation=review.recommendation,
             strengths=review.strengths,
             areas_for_improvement=review.areas_for_improvement,
-            recommendation=review.recommendation,
             additional_comments=review.additional_comments,
             review_submitted_at=datetime.utcnow()
         )
@@ -157,20 +157,15 @@ async def submit_interview_review(
         # Mark token as used
         token_record.mark_used()
         
-        # Update application status if both primary and backup have submitted reviews
+        # Update application status - since we just added a review, change to review_received
         application = db.query(Application).filter(
             Application.id == token_record.application_id
         ).first()
         
         if application:
-            # Check how many reviews we have now
-            review_count = db.query(InterviewReview).filter(
-                InterviewReview.application_id == token_record.application_id
-            ).count()
-            
-            # If we have at least one review, mark as review_received
-            if review_count >= 1:
-                application.status = "review_received"
+            # Always update to review_received when any review is submitted
+            application.status = "review_received"
+            logger.info(f"Updated application {application.id} status to review_received")
         
         db.commit()
         

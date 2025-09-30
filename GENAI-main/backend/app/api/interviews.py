@@ -63,11 +63,13 @@ async def fetch_availability(
             detail="Access denied"
         )
     
-    # Check if application is in correct status
-    if application.status != "selected":
+    # Check if application is in correct status for fetching availability
+    # Allow shortlisted applications or those already in availability_requested status
+    valid_statuses = ["shortlisted", "selected", "availability_requested"]
+    if application.status not in valid_statuses:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Application must be in 'selected' status, currently: {application.status}"
+            detail=f"Application must be in one of {valid_statuses} status, currently: {application.status}"
         )
     
     try:
@@ -504,3 +506,77 @@ async def send_review_tokens(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error sending review tokens"
         )
+
+@router.get("/reviews/{application_id}")
+async def get_all_interview_reviews(
+    application_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all interview reviews for an application"""
+    
+    # Check permissions
+    if current_user.user_type not in ["hr", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only HR and Admin can view interview reviews"
+        )
+    
+    # Get application and check permissions
+    application = db.query(Application).filter(Application.id == application_id).first()
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found"
+        )
+    
+    # Check company permissions
+    if current_user.user_type != "admin" and application.job.company_id != current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    try:
+        # Get all reviews for this application
+        from ..models.interview_review import InterviewReview
+        reviews = db.query(InterviewReview).filter(
+            InterviewReview.application_id == application_id
+        ).all()
+        
+        return {
+            "application_id": application_id,
+            "reviews": [format_review_response(review) for review in reviews],
+            "review_count": len(reviews)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting interview reviews for application {application_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error getting interview reviews"
+        )
+
+def format_review_response(review):
+    """Format interview review for API response"""
+    if not review:
+        return None
+    
+    return {
+        "id": review.id,
+        "interviewer_email": review.interviewer_email,
+        "interviewer_name": review.interviewer_name,
+        "interviewer_type": review.interviewer_type,
+        "technical_score": review.technical_score,
+        "communication_score": review.communication_score,
+        "problem_solving_score": review.problem_solving_score,
+        "cultural_fit_score": review.cultural_fit_score,
+        "leadership_potential": review.leadership_potential,
+        "overall_rating": review.overall_rating,
+        "overall_recommendation": review.overall_recommendation,
+        "strengths": review.strengths,
+        "areas_for_improvement": review.areas_for_improvement,
+        "additional_comments": review.additional_comments,
+        "review_submitted_at": review.review_submitted_at,
+        "created_at": review.created_at
+    }

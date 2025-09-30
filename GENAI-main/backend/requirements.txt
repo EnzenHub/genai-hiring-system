@@ -20,8 +20,7 @@ celery==5.3.4
 pytest==7.4.3
 pytest-asyncio==0.21.1
 httpx
-google-api-python-client
-google-auth
-google-auth-oauthlib
-google-auth-httplib2==0.25.2
-google-apps-meet
+google-api-python-client==2.108.0
+google-auth==2.23.4
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.2.0

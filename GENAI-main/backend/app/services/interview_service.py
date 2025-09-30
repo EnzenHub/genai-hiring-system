@@ -13,7 +13,7 @@ from ..utils.interview_emails import (
     send_availability_request_email,
     send_interview_confirmation_email
 )
-from .google_meet_service import GoogleMeetService
+from .google_calendar_service import google_calendar_service
 import logging
 import json
 
@@ -234,51 +234,57 @@ class InterviewService:
             interview_schedule.interview_scheduled_at = datetime.utcnow()
             interview_schedule.status = "confirmed"
             
-            # Create Google Meet integration
-            google_meet_service = GoogleMeetService()
+            # Create Google Calendar/Meet integration
             google_meet_result = None
             
-            if google_meet_service.is_available():
+            if google_calendar_service.is_available():
                 try:
-                    google_meet_result = google_meet_service.create_interview_meeting(
+                    # Format datetime for Google Calendar API
+                    start_time_formatted = f"{interview_schedule.selected_slot_date.strftime('%Y-%m-%d')} {interview_schedule.selected_slot_time.strftime('%H:%M')}"
+                    
+                    google_meet_result = google_calendar_service.create_interview_meeting(
                         candidate_email=application.email,
                         candidate_name=application.full_name,
                         primary_interviewer_email=interview_schedule.primary_interviewer_email,
                         primary_interviewer_name=interview_schedule.primary_interviewer_name,
                         backup_interviewer_email=interview_schedule.backup_interviewer_email,
                         backup_interviewer_name=interview_schedule.backup_interviewer_name,
-                        interview_date=interview_schedule.selected_slot_date.strftime("%Y-%m-%d"),
-                        interview_time=interview_schedule.selected_slot_time.strftime("%H:%M"),
-                        job_title=application.job.title,
-                        duration_minutes=interview_schedule.interview_duration
+                        interview_date=interview_schedule.selected_slot_date.strftime('%Y-%m-%d'),
+                        interview_time=interview_schedule.selected_slot_time.strftime('%H:%M'),
+                        interview_duration=interview_schedule.interview_duration,
+                        application_id=application.id,
+                        job_title=application.job.title
                     )
                     
-                    if google_meet_result["success"]:
-                        interview_schedule.google_meet_link = google_meet_result["meet_link"]
-                        interview_schedule.google_calendar_event_id = google_meet_result.get("space_name", google_meet_result.get("calendar_event_id"))
+                    if google_meet_result.get("success"):
+                        interview_schedule.google_meet_link = google_meet_result.get("meet_link")
+                        interview_schedule.google_calendar_event_id = google_meet_result.get("calendar_event_id")
                         interview_schedule.google_meet_created = datetime.utcnow()
-                        logger.info(f"Google Meet created for application {application_id}: {google_meet_result['meet_link']}")
+                        logger.info(f"Google Calendar/Meet event created for application {application_id}: {google_meet_result.get('meet_link')}")
                     else:
-                        logger.warning(f"Google Meet creation failed: {google_meet_result['error']}")
+                        logger.warning(f"Google Calendar/Meet creation failed: {google_meet_result.get('error')}")
                         
                 except Exception as e:
-                    logger.warning(f"Google Meet integration failed but continuing: {e}")
+                    logger.warning(f"Google Calendar/Meet integration failed but continuing: {e}")
+                    google_meet_result = {
+                        "success": False,
+                        "error": str(e),
+                        "meet_link": None,
+                        "event_id": None
+                    }
             else:
-                logger.warning("Google Meet service not available - OAuth credentials not configured")
-                logger.info("To enable automatic Google Meet creation:")
-                logger.info("1. Run: python setup_google_meet_oauth.py")
-                logger.info("2. Follow OAuth authorization flow")
+                logger.warning("Google Calendar service not available - OAuth credentials not configured")
+                logger.info("To enable automatic Google Calendar/Meet creation:")
+                logger.info("1. Set up OAuth credentials (credentials.json) or service account")
+                logger.info("2. Configure environment variables in .env")
                 logger.info("3. Restart the backend")
                 
                 # Without API access, we cannot create meeting rooms automatically
-                # For now, we'll indicate this in the interview details
-                # The email template will show instructions for manual setup
                 google_meet_result = {
                     "success": False,
-                    "error": "Google Meet API not configured - manual meeting creation required",
+                    "error": "Google Calendar API not configured - manual meeting creation required",
                     "meet_link": None,
-                    "meeting_code": None,
-                    "space_name": None,
+                    "event_id": None,
                     "requires_manual_setup": True
                 }
             
