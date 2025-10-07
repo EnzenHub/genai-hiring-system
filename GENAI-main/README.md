@@ -1,228 +1,132 @@
-# 🤖 GenAI Hiring System
+# GenAI Hiring System
 
-An intelligent, AI-powered hiring and recruitment management system built with modern technologies.
-
-## ✨ Features
-
-- 🎯 **Smart Resume Screening** - AI-powered resume parsing and scoring
-- 📝 **Job Management** - Create, edit, and manage job postings
-- 👥 **Application Tracking** - Complete applicant lifecycle management
-- 📅 **Interview Scheduling** - Automated interview scheduling with Google Meet integration
-- 📧 **Email Notifications** - Automated candidate and HR notifications
-- 📊 **Analytics Dashboard** - Hiring metrics and insights
-- 🔐 **Role-based Access** - Admin, HR, and Account Manager roles
-- 🌐 **Modern UI** - Responsive React.js frontend
+A comprehensive AI-powered hiring and recruitment management system built with React, FastAPI, and PostgreSQL. This system streamlines the entire hiring process from job posting to candidate selection and interview scheduling.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Docker Desktop installed and running
-- Git (for cloning)
-- 4GB+ RAM recommended
-
-### Installation
+### Windows
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd GENAI-main
-
-# Run the setup script
-# Windows:
+# Run the start script
 start.bat
-
-# Linux/Mac:
-chmod +x start.sh && ./start.sh
 ```
 
-### Access the Application
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
+### Linux/macOS
+```bash
+# Make script executable and run
+chmod +x start.sh
+./start.sh
+```
+
+## 📋 System Overview
+
+The GenAI Hiring System provides:
+
+- **Job Management**: Create, edit, and publish job postings
+- **Application Processing**: Automated resume parsing and scoring
+- **AI-Powered Screening**: LLM-based candidate evaluation
+- **Interview Scheduling**: Automated interview coordination with Google Meet integration
+- **Multi-Role Dashboard**: Separate interfaces for HR, Account Managers, and Admins
+- **Email Automation**: Automated notifications throughout the hiring process
+- **Resume Update Flow**: AI-guided resume improvement for borderline candidates
+
+## 🏗️ Architecture
+
+### Services
+- **Frontend**: React.js application with Tailwind CSS
+- **Backend**: FastAPI with SQLAlchemy ORM
+- **Database**: PostgreSQL for data persistence
+- **Cache**: Redis for session management and caching
+- **LLM**: Ollama integration for AI-powered features
+- **Email**: SMTP integration for automated communications
+
+### Key Features
+- **Containerized Deployment**: Full Docker Compose setup
+- **AI Resume Scoring**: Automated candidate evaluation
+- **Google Meet Integration**: Seamless interview scheduling
+- **Multi-Tenant Support**: Company-based data isolation
+- **Real-time Updates**: Live status updates and notifications
+- **File Management**: Secure resume upload and storage
+
+## 📁 Project Structure
+
+```
+genai-hiring-system/
+├── backend/                 # FastAPI backend application
+│   ├── app/                # Main application code
+│   │   ├── api/           # API endpoints
+│   │   ├── models/        # Database models
+│   │   ├── services/      # Business logic
+│   │   └── utils/         # Utility functions
+│   ├── Dockerfile         # Backend container config
+│   └── requirements.txt   # Python dependencies
+├── frontend/               # React frontend application
+│   ├── src/               # Source code
+│   │   ├── components/    # Reusable components
+│   │   ├── pages/         # Page components
+│   │   └── services/      # API services
+│   ├── Dockerfile         # Frontend container config
+│   └── package.json       # Node.js dependencies
+├── database/              # Database initialization
+├── redis/                 # Redis configuration
+├── docker-compose.yml     # Container orchestration
+├── start.bat             # Windows startup script
+├── start.sh              # Linux/macOS startup script
+└── setup_guide.md        # Detailed setup instructions
+```
+
+## 🔧 Prerequisites
+
+- **Docker Desktop** (Windows/macOS) or **Docker Engine + Docker Compose** (Linux)
+- **Git** for cloning the repository
+- **Web Browser** (Chrome, Firefox, Safari, Edge)
 
 ## 📚 Documentation
 
-- **[Getting Started Guide](GETTING_STARTED.md)** - Complete setup instructions
-- **[Docker Setup Guide](DOCKER_SETUP.md)** - Container configuration details
-- **[Project Structure](project-structure.md)** - Codebase overview
+- **[setup_guide.md](setup_guide.md)**: Complete installation and configuration guide
+- **[project_summary.md](project_summary.md)**: Detailed system workflow and features
 
-## 🛠️ Technology Stack
+## 🌐 Access Points
 
-### Frontend
-- **React.js** - User interface
-- **Tailwind CSS** - Styling
-- **Axios** - HTTP client
+Once running, access the system at:
 
-### Backend
-- **FastAPI** - Python web framework
-- **SQLAlchemy** - Database ORM
-- **PostgreSQL** - Primary database
-- **Redis** - Caching and sessions
+- **Main Application**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
+- **API Health Check**: http://localhost:8000/health
 
-### AI/ML
-- **Ollama** - Local LLM integration
-- **Resume Parsing** - Automated data extraction
-- **Scoring Engine** - AI-powered candidate matching
+## 👥 Default User Roles
 
-### Infrastructure
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-- **Nginx** - Reverse proxy (production)
+The system supports three user types:
 
-## 🔧 Configuration
+1. **Account Manager**: Job creation and candidate pipeline management
+2. **HR Representative**: Application review and interview coordination
+3. **System Admin**: Full system access and user management
 
-### Required Environment Variables
-```env
-# Database
-POSTGRES_PASSWORD=your_secure_password
+## 🔒 Security Features
 
-# Email (required for notifications)
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+- JWT-based authentication
+- Role-based access control
+- Secure file upload handling
+- Environment-based configuration
+- Database connection security
 
-# Security
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
-```
+## 🛠️ Development
 
-See [GETTING_STARTED.md](GETTING_STARTED.md) for complete configuration details.
+For development setup and customization, refer to the setup_guide.md for detailed instructions on:
 
-## 📊 System Architecture
+- Environment configuration
+- Database setup
+- Email configuration
+- Google Meet integration
+- LLM model setup
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Frontend  │────│   Backend   │────│ PostgreSQL  │
-│  (React)    │    │  (FastAPI)  │    │ (Database)  │
-└─────────────┘    └─────────────┘    └─────────────┘
-                           │
-                    ┌─────────────┐    ┌─────────────┐
-                    │    Redis    │    │   Ollama    │
-                    │  (Cache)    │    │   (LLM)     │
-                    └─────────────┘    └─────────────┘
-```
+## 📞 Support
 
-## 🔐 Default User Roles
+For issues or questions:
 
-- **Admin** - Full system access and configuration
-- **HR** - Application management and interview scheduling
-- **Account Manager** - Job posting and candidate management
-
-## 📝 Key Workflows
-
-### 1. Job Posting
-1. Account Manager creates job posting
-2. Admin approves and publishes
-3. Job becomes available for applications
-
-### 2. Application Processing
-1. Candidate applies with resume
-2. AI parses and scores resume
-3. System determines candidate status
-4. HR receives notifications for qualified candidates
-
-### 3. Interview Scheduling
-1. HR schedules interview for qualified candidates
-2. System generates Google Meet link
-3. Email notifications sent to all participants
-4. Interview feedback collected post-interview
-
-## 🗄️ Database
-
-The system includes a complete PostgreSQL database with:
-- User management and authentication
-- Job postings and requirements
-- Application tracking and scoring
-- Interview scheduling and reviews
-- Company and role management
-
-**Database dump**: `genai_hiring_database_dump.sql` (565KB)
-
-## 🚀 Deployment
-
-### Development
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### Production
-See [DOCKER_SETUP.md](DOCKER_SETUP.md) for production deployment guidelines.
-
-## 🔧 Maintenance
-
-### Database Backup
-```bash
-# Windows
-backup-database.bat
-
-# Linux/Mac
-./backup-database.sh
-```
-
-### System Updates
-```bash
-# Pull latest changes
-git pull
-
-# Rebuild containers
-docker-compose build --no-cache
-docker-compose up -d
-```
-
-## 🐛 Troubleshooting
-
-Common issues and solutions are documented in [GETTING_STARTED.md](GETTING_STARTED.md#common-issues--solutions).
-
-### Quick Fixes
-```bash
-# Restart all services
-docker-compose restart
-
-# Check service status
-docker-compose ps
-
-# View service logs
-docker-compose logs [service-name]
-```
-
-## 📈 Performance
-
-### System Requirements
-- **Minimum**: 4GB RAM, 5GB storage
-- **Recommended**: 8GB RAM, SSD storage
-- **Production**: 16GB+ RAM, dedicated server
-
-### Optimization Tips
-- Allocate 6GB+ RAM to Docker Desktop
-- Use SSD storage for database
-- Enable WSL2 on Windows
-- Regular database maintenance
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+1. Check the setup_guide.md for troubleshooting
+2. Review Docker logs: `docker-compose logs -f`
+3. Verify service health at http://localhost:8000/health
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-For setup issues:
-1. Check [GETTING_STARTED.md](GETTING_STARTED.md)
-2. Review container logs: `docker-compose logs`
-3. Verify environment configuration
-4. Ensure Docker Desktop is running
-
----
-
-**🎉 Ready to revolutionize your hiring process? Get started now!**
+This project is proprietary software. All rights reserved.

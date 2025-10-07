@@ -50,6 +50,24 @@ const ApplicationDetails = () => {
     loadApplication();
   }, [loadApplication]);
 
+  // Auto-refresh for applications with resume update requests
+  useEffect(() => {
+    if (!application) return;
+    
+    // Check if this application has an active resume update request
+    const hasResumeUpdateRequest = application.status === 'resume_update_requested' || 
+                                   application.status === 'pending_llm_evaluation';
+    
+    if (hasResumeUpdateRequest) {
+      // Poll every 30 seconds to check for updates
+      const interval = setInterval(() => {
+        loadApplication();
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [application, loadApplication]);
+
   const handleStatusUpdate = async (newStatus) => {
     try {
       setUpdating(true);
@@ -275,12 +293,32 @@ const ApplicationDetails = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{application.candidate_name}</h1>
             <p className="text-gray-600">Application for {application.job_title}</p>
-            <div className="flex items-center mt-2">
+            <div className="flex items-center mt-2 space-x-4">
               <span className={`status-badge ${getStatusColor(application.status)}`}>
                 {getStatusText(application.status)}
               </span>
+              {application.updated_at && (
+                <span className="text-sm text-gray-500">
+                  Last updated: {new Date(application.updated_at).toLocaleString()}
+                </span>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Refresh Button */}
+        <div className="flex space-x-2">
+          <button
+            onClick={loadApplication}
+            disabled={loading}
+            className="btn-secondary flex items-center"
+            title="Refresh application data"
+          >
+            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
 
         {/* Status Update Actions */}
@@ -556,7 +594,17 @@ const ApplicationDetails = () => {
           {/* Resume Download */}
           {application.resume_filename && (
             <div className="card">
-              <h3 className="text-lg font-semibold mb-2">Resume</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">Resume</h3>
+                {application.resume_filename && application.resume_filename.includes('updated') && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Updated
+                  </span>
+                )}
+              </div>
               <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center min-w-0 flex-1">
                   <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-2.5 flex-shrink-0" />

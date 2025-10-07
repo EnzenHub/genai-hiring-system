@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     shortlist_threshold: int = 70
     requalify_threshold: int = 60
     
+    # Resume Update Configuration
+    max_resume_update_attempts: int = 3
+    
     # Frontend URL for generating review links
     frontend_url: str = "http://localhost:3000"
     

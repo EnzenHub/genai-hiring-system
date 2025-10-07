@@ -28,6 +28,15 @@ export const uploadApi = axios.create({
   },
 });
 
+// Create separate axios instance for public file uploads (no auth required)
+export const publicUploadApi = axios.create({
+  baseURL: config.apiUrl,
+  timeout: 180000, // 3 minutes for file uploads and processing (resume parsing + scoring can be slow)
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Request interceptor to add auth token (for regular API)
 api.interceptors.request.use(
   (config) => {
@@ -105,6 +114,15 @@ uploadApi.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle errors (for Public Upload API - no auth redirect)
+publicUploadApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Don't redirect to login for public endpoints
     return Promise.reject(error);
   }
 );

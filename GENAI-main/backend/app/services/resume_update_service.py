@@ -40,14 +40,24 @@ class ResumeUpdateService:
             if not job:
                 raise ValueError(f"Job not found for application {application.id}")
 
+            # Helper function to ensure we have a list
+            def ensure_list(data):
+                if isinstance(data, str):
+                    import json
+                    try:
+                        return json.loads(data)
+                    except:
+                        return []
+                return data if data is not None else []
+            
             # Prepare candidate data
             candidate_data = {
                 "name": application.full_name,
                 "email": application.email,
-                "skills": application.parsed_skills or [],
-                "experience": application.parsed_experience or [],
-                "education": application.parsed_education or [],
-                "certifications": application.parsed_certifications or [],
+                "skills": ensure_list(application.parsed_skills),
+                "experience": ensure_list(application.parsed_experience),
+                "education": ensure_list(application.parsed_education),
+                "certifications": ensure_list(application.parsed_certifications),
                 "current_score": current_score,
                 "cover_letter": application.cover_letter,
                 "additional_info": application.additional_info
@@ -57,10 +67,10 @@ class ResumeUpdateService:
             job_requirements = {
                 "title": job.title or "Position",
                 "description": job.description or "Job description not available",
-                "key_skills": job.key_skills or [],
+                "key_skills": ensure_list(job.key_skills),
                 "required_experience": job.required_experience or "Not specified",
-                "certifications": job.certifications or [],
-                "additional_requirements": job.additional_requirements or [],
+                "certifications": ensure_list(job.certifications),
+                "additional_requirements": ensure_list(job.additional_requirements),
                 "experience_level": job.experience_level or "Not specified",
                 "department": job.department or "Not specified"
             }
@@ -84,7 +94,7 @@ class ResumeUpdateService:
             # Call LLM for evaluation
             if self.llm_service.fallback_mode:
                 logger.warning("LLM in fallback mode, using rule-based evaluation")
-                result = self._fallback_evaluation(candidate_data, job_requirements, current_score)
+                result = self._fallback_evaluation(candidate_data, job_requirements, current_score, scoring_context)
                 llm_response_raw = "FALLBACK_MODE: Rule-based evaluation used"
             else:
                 try:
@@ -97,7 +107,7 @@ class ResumeUpdateService:
                     result = self._parse_llm_evaluation_response(llm_response_raw)
                 except Exception as llm_error:
                     logger.warning(f"LLM call failed: {llm_error}, falling back to rule-based evaluation")
-                    result = self._fallback_evaluation(candidate_data, job_requirements, current_score)
+                    result = self._fallback_evaluation(candidate_data, job_requirements, current_score, scoring_context)
                     llm_response_raw = f"LLM_ERROR: {str(llm_error)} - Used fallback evaluation"
             
             processing_time = int((datetime.now() - start_time).total_seconds() * 1000)
@@ -129,9 +139,29 @@ class ResumeUpdateService:
     def _create_llm_evaluation_prompt(self, candidate_data: Dict, job_requirements: Dict) -> str:
         """Create a detailed prompt for LLM evaluation"""
         
-        skills_text = ", ".join(candidate_data["skills"]) if candidate_data["skills"] else "None listed"
-        experience_text = "; ".join(candidate_data["experience"]) if candidate_data["experience"] else "None listed"
-        education_text = "; ".join(candidate_data["education"]) if candidate_data["education"] else "None listed"
+        # Safely convert lists to text, handling both strings and dicts
+        def safe_join(items, separator=", "):
+            if not items:
+                return "None listed"
+            text_items = []
+            for item in items:
+                if isinstance(item, dict):
+                    # For experience: use title and company
+                    if 'title' in item:
+                        text_items.append(f"{item.get('title', '')} at {item.get('company', 'Unknown Company')}")
+                    # For education: use degree and institution
+                    elif 'degree' in item:
+                        text_items.append(f"{item.get('degree', '')} from {item.get('institution', 'Unknown Institution')}")
+                    else:
+                        # Generic dict handling
+                        text_items.append(str(item))
+                else:
+                    text_items.append(str(item))
+            return separator.join(text_items)
+        
+        skills_text = safe_join(candidate_data["skills"])
+        experience_text = safe_join(candidate_data["experience"], "; ")
+        education_text = safe_join(candidate_data["education"], "; ")
         
         job_skills_text = ", ".join(job_requirements["key_skills"]) if job_requirements["key_skills"] else "None specified"
         
@@ -151,7 +181,7 @@ class ResumeUpdateService:
 - Skills: {skills_text}
 - Experience: {experience_text}
 - Education: {education_text}
-- Cover Letter: {candidate_data.get('cover_letter', 'Not provided')[:200]}...
+- Cover Letter: {(candidate_data.get('cover_letter') or 'Not provided')[:200]}...
 
 **Evaluation Criteria:**
 Look for hidden potential, transferable skills, growth mindset, relevant experience even if not perfectly matched, educational background that could compensate for experience gaps, and passion/motivation indicators.
@@ -216,48 +246,80 @@ Be thorough but fair. Only recommend giving a chance if you genuinely see potent
                 "confidence": 0.0
             }
 
-    def _fallback_evaluation(self, candidate_data: Dict, job_requirements: Dict, current_score: float) -> Dict[str, Any]:
+    def _fallback_evaluation(self, candidate_data: Dict, job_requirements: Dict, current_score: float, scoring_context: Dict[str, float] = None) -> Dict[str, Any]:
         """Fallback evaluation when LLM is not available"""
         
-        # Simple rule-based evaluation
+        # Enhanced rule-based evaluation using scoring context
         give_chance = False
-        reasoning = "Rule-based evaluation: "
+        reasoning_parts = []
+        confidence = 0.5
         
-        # Check if score is close to threshold (60-69)
-        if current_score >= 60:
-            give_chance = True
-            reasoning += "Score is close to threshold (60-69), worth giving a chance. "
-        
-        # Check for relevant skills
-        candidate_skills = [skill.lower() for skill in candidate_data.get("skills", [])]
-        job_skills = [skill.lower() for skill in job_requirements.get("key_skills", [])]
-        
-        if candidate_skills and job_skills:
-            skill_overlap = len(set(candidate_skills) & set(job_skills))
-            if skill_overlap >= 2:
+        # Use scoring context if available for more accurate evaluation
+        if scoring_context:
+            skills_match = scoring_context.get('skills_match', 0)
+            experience_match = scoring_context.get('experience_match', 0)
+            education_match = scoring_context.get('education_match', 0)
+            ats_score = scoring_context.get('ats_score', 0)
+            match_score = scoring_context.get('match_score', 0)
+            
+            # Rule 1: Strong skills or experience match (≥60%) with overall score ≥60%
+            if (skills_match >= 60 or experience_match >= 60) and current_score >= 60:
                 give_chance = True
-                reasoning += f"Found {skill_overlap} matching skills. "
+                reasoning_parts.append(f"Strong potential: Skills match {skills_match:.1f}%, Experience match {experience_match:.1f}%")
+                confidence += 0.3
+            
+            # Rule 2: Good overall match but low ATS (ATS dragging down the score)
+            if match_score >= 70 and ats_score < 50:
+                give_chance = True
+                reasoning_parts.append(f"Good job fit ({match_score:.1f}% match) but poor ATS formatting ({ats_score:.1f}%)")
+                confidence += 0.4
+            
+            # Rule 3: Score in improvement range (60-70)
+            if 60 <= current_score < 70:
+                give_chance = True
+                reasoning_parts.append(f"Score {current_score:.1f}% is in improvement range")
+                confidence += 0.2
+            
+            # Rule 4: Any component score ≥80% indicates strong potential
+            if any(score >= 80 for score in [skills_match, experience_match, education_match]):
+                give_chance = True
+                high_scores = [name for name, score in [
+                    ('skills', skills_match), ('experience', experience_match), ('education', education_match)
+                ] if score >= 80]
+                reasoning_parts.append(f"Excellent {', '.join(high_scores)} alignment")
+                confidence += 0.3
         
-        # Check education level
-        education = candidate_data.get("education", [])
-        if any("bachelor" in edu.lower() or "master" in edu.lower() or "degree" in edu.lower() for edu in education):
-            give_chance = True
-            reasoning += "Has relevant educational background. "
+        else:
+            # Fallback to basic evaluation when no scoring context
+            if current_score >= 60:
+                give_chance = True
+                reasoning_parts.append("Score close to threshold")
+                confidence += 0.2
+            
+            # Basic skills check
+            candidate_skills = [skill.lower() for skill in candidate_data.get("skills", [])]
+            job_skills = [skill.lower() for skill in job_requirements.get("key_skills", [])]
+            
+            if candidate_skills and job_skills:
+                skill_overlap = len(set(candidate_skills) & set(job_skills))
+                if skill_overlap >= 2:
+                    give_chance = True
+                    reasoning_parts.append(f"Found {skill_overlap} matching skills")
+                    confidence += 0.2
         
-        # Check experience
-        experience = candidate_data.get("experience", [])
-        if len(experience) >= 2:
-            give_chance = True
-            reasoning += "Has multiple work experiences. "
+        # Final decision
+        if not reasoning_parts:
+            reasoning_parts.append("Insufficient qualifications for resume update opportunity")
+            give_chance = False
+            confidence = 0.2
         
-        if not give_chance:
-            reasoning += "Insufficient indicators for potential improvement."
+        final_reasoning = "Rule-based evaluation: " + "; ".join(reasoning_parts) + "."
         
         return {
             "should_give_chance": give_chance,
-            "reasoning": reasoning.strip(),
-            "confidence": 0.7 if give_chance else 0.3,
-            "key_strengths": candidate_skills[:3] if candidate_skills else [],
+            "reasoning": final_reasoning,
+            "confidence": min(confidence, 1.0),
+            "key_strengths": candidate_data.get("skills", [])[:3] if candidate_data.get("skills") else [],
             "improvement_areas": ["Resume formatting", "Keyword optimization", "Skills presentation"],
             "recommendation": "Focus on improving resume structure and highlighting relevant experience" if give_chance else "Consider gaining more relevant experience"
         }
@@ -266,7 +328,8 @@ Be thorough but fair. Only recommend giving a chance if you genuinely see potent
         self, 
         db: Session, 
         application: Application, 
-        current_score: float
+        current_score: float,
+        scoring_context: Dict[str, float] = None
     ) -> bool:
         """
         Initiate the resume update flow for a candidate with score < 70

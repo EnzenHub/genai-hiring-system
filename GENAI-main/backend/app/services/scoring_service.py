@@ -23,37 +23,63 @@ class ScoringService:
             'certification_match': 0.0
         }
         
+        # Helper function to ensure we have a list
+        def ensure_list(data):
+            if isinstance(data, str):
+                import json
+                try:
+                    return json.loads(data)
+                except:
+                    return []
+            return data if data is not None else []
+        
         # Skills matching
-        if job.key_skills and application.parsed_skills:
-            job_skills = [skill.lower() for skill in job.key_skills]
-            candidate_skills = [skill.lower() for skill in application.parsed_skills]
+        job_skills_raw = ensure_list(job.key_skills)
+        candidate_skills_raw = ensure_list(application.parsed_skills)
+        
+        if job_skills_raw and candidate_skills_raw:
+            job_skills = [skill.lower() for skill in job_skills_raw]
+            candidate_skills = [skill.lower() for skill in candidate_skills_raw]
             
             matched_skills = set(job_skills) & set(candidate_skills)
             if job_skills:
                 scores['skills_match'] = (len(matched_skills) / len(job_skills)) * 100
         
         # Experience matching (simplified - can be enhanced)
-        if application.parsed_experience:
-            if len(application.parsed_experience) >= 2:
+        experience_data = ensure_list(application.parsed_experience)
+        if experience_data:
+            if len(experience_data) >= 2:
                 scores['experience_match'] = 80.0
-            elif len(application.parsed_experience) >= 1:
+            elif len(experience_data) >= 1:
                 scores['experience_match'] = 60.0
             else:
                 scores['experience_match'] = 20.0
         
         # Education matching
-        if application.parsed_education:
-            if any('bachelor' in edu.get('degree', '').lower() for edu in application.parsed_education):
-                scores['education_match'] = 70.0
-            elif any('master' in edu.get('degree', '').lower() for edu in application.parsed_education):
+        education_data = ensure_list(application.parsed_education)
+        if education_data:
+            # Handle both string and dict formats
+            education_strings = []
+            for edu in education_data:
+                if isinstance(edu, dict):
+                    education_strings.append(edu.get('degree', '').lower())
+                else:
+                    education_strings.append(str(edu).lower())
+            
+            if any('master' in edu_str for edu_str in education_strings):
                 scores['education_match'] = 90.0
+            elif any('bachelor' in edu_str for edu_str in education_strings):
+                scores['education_match'] = 70.0
             else:
                 scores['education_match'] = 50.0
         
         # Certification matching
-        if job.certifications and application.parsed_certifications:
-            job_certs = [cert.lower() for cert in job.certifications]
-            candidate_certs = [cert.lower() for cert in application.parsed_certifications]
+        job_certs_raw = ensure_list(job.certifications)
+        candidate_certs_raw = ensure_list(application.parsed_certifications)
+        
+        if job_certs_raw and candidate_certs_raw:
+            job_certs = [cert.lower() for cert in job_certs_raw]
+            candidate_certs = [cert.lower() for cert in candidate_certs_raw]
             
             matched_certs = set(job_certs) & set(candidate_certs)
             if job_certs:
@@ -111,10 +137,8 @@ class ScoringService:
         """Determine candidate status based on score"""
         if final_score >= self.shortlist_threshold:
             return "auto_selected", "selected"  # Auto-trigger selection flow for ≥70
-        elif final_score >= self.requalify_threshold:
-            return "requalification_needed", "under_review"
         else:
-            # Score < 60: Trigger LLM evaluation for potential resume update flow
+            # Score < 70: Trigger LLM evaluation for potential resume update flow
             return "llm_evaluation_needed", "pending_llm_evaluation"
     
     def generate_ai_feedback(self, job: Job, application: Application, scores: Dict[str, float]) -> str:
@@ -223,8 +247,18 @@ class ScoringService:
                     db.commit()
                 else:
                     # Initial scoring, initiate LLM evaluation and potential resume update flow
+                    # Pass detailed scoring information for better LLM evaluation
+                    scoring_context = {
+                        "final_score": final_score,
+                        "match_score": match_score,
+                        "ats_score": ats_score,
+                        "skills_match": match_scores.get('skills_match', 0),
+                        "experience_match": match_scores.get('experience_match', 0),
+                        "education_match": match_scores.get('education_match', 0),
+                        "certification_match": match_scores.get('certification_match', 0)
+                    }
                     flow_initiated = await resume_update_service.initiate_resume_update_flow(
-                        db, application, final_score
+                        db, application, final_score, scoring_context
                     )
                     
                     if not flow_initiated:

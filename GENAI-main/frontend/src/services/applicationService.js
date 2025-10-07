@@ -1,4 +1,4 @@
-import api, { uploadApi } from './api';
+import api, { uploadApi, publicUploadApi } from './api';
 
 export const applicationService = {
   // Application CRUD operations
@@ -42,7 +42,7 @@ export const applicationService = {
 
   // Application submission (public)
   async submitApplication(formData) {
-    const response = await uploadApi.post('/api/applications/apply', formData, {
+    const response = await publicUploadApi.post('/api/applications/apply', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

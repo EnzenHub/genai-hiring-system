@@ -131,10 +131,13 @@ async def submit_application(
         }
         
     except Exception as e:
+        import traceback
         logger.error(f"Error submitting application: {e}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error processing application"
+            detail=f"Error processing application: {str(e)}"
         )
 
 @router.get("/")
@@ -215,7 +218,7 @@ async def get_applications(
             }
             
             # Get scores if available
-            scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == app.id).first()
+            scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == app.id).order_by(ApplicationScore.created_at.desc()).first()
             if scores:
                 app_dict.update({
                     "ai_score": scores.final_score,
@@ -344,7 +347,7 @@ async def get_application(
     }
     
     # Get scores if available
-    scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == application.id).first()
+    scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == application.id).order_by(ApplicationScore.created_at.desc()).first()
     if scores:
         app_dict.update({
             "ai_score": scores.final_score,
@@ -621,7 +624,7 @@ async def get_application_by_reference(
     }
     
     # Get scores if available
-    scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == application.id).first()
+    scores = db.query(ApplicationScore).filter(ApplicationScore.application_id == application.id).order_by(ApplicationScore.created_at.desc()).first()
     if scores:
         app_dict.update({
             "ai_score": scores.final_score,

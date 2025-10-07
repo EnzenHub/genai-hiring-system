@@ -5,6 +5,7 @@ from .company import Company
 from .interview_schedule import InterviewSchedule
 from .interview_review import InterviewReview
 from .interviewer_token import InterviewerToken
+from .resume_update_tracking import ResumeUpdateRequest, ResumeUpdateHistory, LLMEvaluationLog
 
 __all__ = [
     "User",
@@ -15,5 +16,8 @@ __all__ = [
     "Company",
     "InterviewSchedule",
     "InterviewReview",
-    "InterviewerToken"
+    "InterviewerToken",
+    "ResumeUpdateRequest",
+    "ResumeUpdateHistory", 
+    "LLMEvaluationLog"
 ]

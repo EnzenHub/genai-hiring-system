@@ -51,7 +51,7 @@ class Application(Base):
     
     # Relationships
     job = relationship("Job", back_populates="applications")
-    scores = relationship("ApplicationScore", back_populates="application", cascade="all, delete-orphan")
+    scores = relationship("ApplicationScore", back_populates="application", cascade="all, delete-orphan", order_by="ApplicationScore.created_at.desc()")
     interview_schedule = relationship("InterviewSchedule", back_populates="application", uselist=False, foreign_keys="InterviewSchedule.application_id")
     interview_review = relationship("InterviewReview", back_populates="application", uselist=False, foreign_keys="InterviewReview.application_id")
     resume_update_request = relationship("ResumeUpdateRequest", back_populates="application", uselist=False, cascade="all, delete-orphan")
