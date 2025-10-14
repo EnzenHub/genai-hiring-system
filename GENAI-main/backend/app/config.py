@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     
     # API Configuration
-    api_host: str = "localhost"
+    api_host: str = "149.102.158.71"
     api_port: int = 8000
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str = "http://149.102.158.71:6002"
     
     # JWT Configuration
     jwt_secret_key: str = "your-super-secret-jwt-key-change-this-in-production"
@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     debug: bool = True
     environment: str = "development"
     secret_key: str = "your-super-secret-key-change-this-in-production"
+    frontend_url: Optional[str] = None  # Will be set from FRONTEND_URL env var
     
     # Scoring Configuration
     match_score_weight: float = 0.5
@@ -66,7 +67,7 @@ class Settings(BaseSettings):
     max_resume_update_attempts: int = 3
     
     # Frontend URL for generating review links
-    frontend_url: str = "http://localhost:3000"
+    frontend_url: str = "http://149.102.158.71:6003"
     
     # Google Calendar/Meet Configuration
     use_service_account: bool = False

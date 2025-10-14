@@ -11,7 +11,10 @@ import {
   FunnelIcon,
   CalendarDaysIcon,
   BuildingOfficeIcon,
-  MapPinIcon
+  MapPinIcon,
+  SparklesIcon,
+  ArrowUpRightIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 const JobList = () => {
@@ -30,8 +33,9 @@ const JobList = () => {
       setLoading(true);
       setError('');
       const params = {
-        ...filters,
-        limit: 50
+        limit: 50,
+        created_by_me: filters.created_by_me,
+        ...(filters.status ? { status_filter: filters.status } : {})
       };
       
       const data = await jobService.getJobs(params);
@@ -132,6 +136,22 @@ const JobList = () => {
     }
   };
 
+  // Accent border color per status for visual emphasis
+  const getStatusAccent = (status) => {
+    switch (status) {
+      case 'draft':
+        return 'border-l-4 border-gray-300';
+      case 'pending_approval':
+        return 'border-l-4 border-yellow-400';
+      case 'approved':
+        return 'border-l-4 border-blue-400';
+      case 'published':
+        return 'border-l-4 border-green-500';
+      default:
+        return 'border-l-4 border-gray-300';
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -149,60 +169,74 @@ const JobList = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Job Management</h1>
-          <p className="text-gray-600">Manage and track your job postings</p>
+      <div className="card overflow-hidden relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-50 via-blue-50 to-indigo-50" aria-hidden="true"></div>
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between p-6 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
+              <SparklesIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-xl font-semibold text-gray-900">{user?.user_type === 'account_manager' ? 'Jobs — Account Manager' : 'Job Management'}</h1>
+              <p className="text-gray-600 text-sm md:text-base">{user?.user_type === 'account_manager' ? 'Review and manage the jobs you own or collaborate on' : 'Manage and track your job postings'}</p>
+            </div>
+          </div>
+          {(user?.user_type === 'account_manager' || user?.user_type === 'admin') && (
+            <Link
+              to="/jobs/create"
+               className="bg-purple-600 text-white flex items-center px-4 py-2 rounded-md shadow hover:bg-purple-700 hover:shadow-md transition"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Create New Job
+              <ArrowUpRightIcon className="h-4 w-4 ml-2" />
+            </Link>
+          )}
         </div>
-        {(user?.user_type === 'account_manager' || user?.user_type === 'admin') && (
-          <Link
-            to="/jobs/create"
-            className="btn-primary flex items-center"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Create New Job
-          </Link>
-        )}
       </div>
 
       {/* Filters */}
-      <div className="card">
-        <div className="flex flex-wrap gap-4 items-center">
-          <FunnelIcon className="h-5 w-5 text-gray-400" />
-          
-          <select
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="approved">Approved</option>
-            <option value="published">Published</option>
-          </select>
+      <div className="rounded-lg p-4 bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700">Filters</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <select
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="published">Published</option>
+            </select>
 
-          {user?.user_type === 'account_manager' && (
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={filters.created_by_me}
-                onChange={(e) => handleFilterChange('created_by_me', e.target.checked)}
-              />
-              <span className="text-sm">My Jobs Only</span>
-            </label>
-          )}
+            {user?.user_type === 'account_manager' && (
+              <label className="flex items-center px-2 py-1 rounded-md hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mr-2 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  checked={filters.created_by_me}
+                  onChange={(e) => handleFilterChange('created_by_me', e.target.checked)}
+                />
+                <span className="text-sm text-gray-700">My Jobs Only</span>
+              </label>
+            )}
 
-          <button
-            onClick={() => {
-              setFilters({ status: '', created_by_me: false });
-              setSearchParams(new URLSearchParams());
-            }}
-            className="text-sm text-primary-600 hover:text-primary-700"
-          >
-            Clear Filters
-          </button>
+            <button
+              onClick={() => {
+                setFilters({ status: '', created_by_me: false });
+                setSearchParams(new URLSearchParams());
+              }}
+              className="inline-flex items-center text-primary-700 hover:text-primary-800 hover:bg-primary-50 p-2 rounded-md transition"
+              title="Clear Filters"
+            >
+              <ArrowPathIcon className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -216,16 +250,19 @@ const JobList = () => {
       {/* Jobs List */}
       <div className="card">
         {jobs.length > 0 ? (
-          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
             {jobs.map((job) => (
-              <div key={job.id} className="border border-gray-200 rounded-lg p-6 hover:bg-gray-50">
+              <div key={job.id} className={`bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 hover:shadow-sm transition ${getStatusAccent(job.status)} group`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                      <span className={`status-badge ${getStatusColor(job.status)}`}>
+                      <span className={`status-badge ${getStatusColor(job.status)} shadow-sm ring-1 ring-inset ring-gray-200`}>
                         {getStatusText(job.status)}
                       </span>
+                      {user?.user_type === 'account_manager' && job.created_by === user.id && (
+                        <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 ring-1 ring-inset ring-primary-200">Mine</span>
+                      )}
                     </div>
                     
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
@@ -247,11 +284,7 @@ const JobList = () => {
                       </div>
                     </div>
 
-                    {job.short_description && (
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {job.short_description}
-                      </p>
-                    )}
+                    {/* Description removed per request */}
 
                     {job.key_skills && job.key_skills.length > 0 && (
                       <div className="mb-3">
@@ -259,14 +292,14 @@ const JobList = () => {
                           {job.key_skills.slice(0, 5).map((skill, index) => (
                             <span
                               key={index}
-                              className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                              className="inline-flex items-center bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full ring-1 ring-inset ring-gray-200"
                             >
                               {skill}
                             </span>
                           ))}
                           {job.key_skills.length > 5 && (
                             <span className="inline-block text-gray-500 text-xs px-2 py-1">
-                              +{job.key_skills.length - 5} more
+{job.key_skills.length - 5} more
                             </span>
                           )}
                         </div>
@@ -277,50 +310,44 @@ const JobList = () => {
                   <div className="flex space-x-2 ml-4">
                     <Link
                       to={`/jobs/${job.id}`}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md"
+                      className="inline-flex items-center p-2 text-primary-700 hover:text-primary-800 hover:bg-primary-50 rounded-md transition"
                       title="View Job"
                     >
                       <EyeIcon className="h-5 w-5" />
                     </Link>
-                    
-                    {/* HR Approval Button */}
                     {(user?.user_type === 'hr' || user?.user_type === 'admin') && 
                      job.status === 'pending_approval' && (
                       <button
                         onClick={() => handleApproveJob(job.id)}
-                        className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md"
+                        className="inline-flex items-center p-2 text-gray-700 hover:text-green-700 hover:bg-green-50 rounded-md transition"
                         title="Approve Job"
                       >
                         <CheckIcon className="h-5 w-5" />
                       </button>
                     )}
-
-                    {/* HR Publish Button */}
                     {(user?.user_type === 'hr' || user?.user_type === 'admin') && 
                      job.status === 'approved' && (
                       <button
                         onClick={() => handlePublishJob(job.id)}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
+                        className="inline-flex items-center p-2 text-gray-700 hover:text-blue-700 hover:bg-blue-50 rounded-md transition"
                         title="Publish to Careers Page"
                       >
                         <GlobeAltIcon className="h-5 w-5" />
                       </button>
                     )}
-                    
                     {(user?.user_type === 'admin' || 
                       (user?.user_type === 'account_manager' && job.created_by === user.id)) && (
                       <>
                         <Link
                           to={`/jobs/${job.id}/edit`}
-                          className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md"
+                          className="inline-flex items-center p-2 text-primary-700 hover:text-primary-800 hover:bg-primary-50 rounded-md transition"
                           title="Edit Job"
                         >
                           <PencilIcon className="h-5 w-5" />
                         </Link>
-                        
                         <button
                           onClick={() => handleDeleteJob(job.id)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md"
+                          className="inline-flex items-center p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition"
                           title="Delete Job"
                         >
                           <TrashIcon className="h-5 w-5" />

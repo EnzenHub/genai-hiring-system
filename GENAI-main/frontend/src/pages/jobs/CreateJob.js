@@ -5,7 +5,8 @@ import {
   SparklesIcon, 
   DocumentTextIcon,
   PlusIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const CreateJob = () => {
@@ -66,8 +67,16 @@ const CreateJob = () => {
       setAiFields(response);
       setCurrentStep(2);
     } catch (err) {
-      setError('Failed to generate AI fields. Please try again or continue manually.');
       console.error('AI Generation Error:', err);
+      if (err.response?.data?.detail) {
+        setError(`Failed to generate AI fields: ${err.response.data.detail}`);
+      } else if (err.response?.status === 401) {
+        setError('You are not authorized to use AI features. Please log in as an Account Manager or Admin.');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to use AI features. Only Account Managers and Admins can generate AI fields.');
+      } else {
+        setError('Failed to generate AI fields. Please try again or continue manually.');
+      }
       // Allow user to proceed manually
       setCurrentStep(2);
     } finally {
@@ -114,8 +123,16 @@ const CreateJob = () => {
       setJobDescription(response);
       setCurrentStep(3);
     } catch (err) {
-      setError('Failed to generate job description. Please write it manually.');
       console.error('Description Generation Error:', err);
+      if (err.response?.data?.detail) {
+        setError(`Failed to generate job description: ${err.response.data.detail}`);
+      } else if (err.response?.status === 401) {
+        setError('You are not authorized to use AI features. Please log in as an Account Manager or Admin.');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to use AI features. Only Account Managers and Admins can generate job descriptions.');
+      } else {
+        setError('Failed to generate job description. Please write it manually.');
+      }
       setCurrentStep(3);
     } finally {
       setLoading(false);
@@ -145,19 +162,27 @@ const CreateJob = () => {
       const jobData = {
         title: basicDetails.role_title,
         description: jobDescription.description || basicDetails.role_description,
-        short_description: jobDescription.short_description,
-        department: additionalDetails.department,
-        location: additionalDetails.location,
-        job_type: additionalDetails.job_type,
-        experience_level: additionalDetails.experience_level,
-        salary_range: additionalDetails.salary_range
+        short_description: jobDescription.short_description || '',
+        department: additionalDetails.department || '',
+        location: additionalDetails.location || '',
+        job_type: additionalDetails.job_type || 'full-time',
+        experience_level: additionalDetails.experience_level || '',
+        salary_range: additionalDetails.salary_range || ''
       };
 
       const response = await jobService.createJob(jobData);
       navigate(`/jobs/${response.id}`);
     } catch (err) {
-      setError('Failed to create job. Please try again.');
       console.error('Job Creation Error:', err);
+      if (err.response?.data?.detail) {
+        setError(`Failed to create job: ${err.response.data.detail}`);
+      } else if (err.response?.status === 401) {
+        setError('You are not authorized to create jobs. Please log in as an Account Manager or Admin.');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to create jobs. Only Account Managers and Admins can create jobs.');
+      } else {
+        setError('Failed to create job. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -173,40 +198,45 @@ const CreateJob = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Create New Job</h1>
-        <p className="text-gray-600">Create a new job posting with AI assistance</p>
-      </div>
+<div className="rounded-xl p-6 bg-gradient-to-r from-primary-50 via-white to-primary-50 border border-primary-100 shadow-sm">
+<div className="flex items-start justify-between">
+<div>
+<h1 className="text-2xl font-bold text-gray-900">Create New Job</h1>
+<p className="text-gray-600">Create a new job posting with AI assistance</p>
+</div>
+<SparklesIcon className="h-6 w-6 text-primary-600" />
+</div>
+</div>
 
       {/* Progress Steps */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
+<div className="rounded-lg p-6 bg-white/80 backdrop-blur-sm shadow-sm ring-1 ring-inset ring-gray-100">
+<div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           {stepTitles.map((title, index) => (
             <div key={index} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                index + 1 <= currentStep 
-                  ? 'bg-primary-600 text-white' 
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
+<div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+index + 1 <= currentStep 
+? 'bg-primary-600 text-white ring-1 ring-inset ring-primary-300 shadow-sm' 
+: 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200'
+}`}>
                 {index + 1}
               </div>
-              <span className={`ml-2 text-sm ${
-                index + 1 <= currentStep ? 'text-primary-600' : 'text-gray-500'
-              }`}>
+<span className={`ml-2 text-sm ${
+index + 1 <= currentStep ? 'text-primary-700 font-medium' : 'text-gray-500'
+}`}>
                 {title}
               </span>
               {index < stepTitles.length - 1 && (
-                <div className={`w-12 h-px mx-4 ${
-                  index + 1 < currentStep ? 'bg-primary-600' : 'bg-gray-200'
-                }`} />
+<div className={`w-12 h-0.5 mx-4 ${
+index + 1 < currentStep ? 'bg-primary-500' : 'bg-gray-200'
+}`} />
               )}
             </div>
           ))}
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md flex items-center">
+{error && (
+<div className="mb-6 bg-red-50 border border-red-200 ring-1 ring-inset ring-red-100 text-red-700 px-4 py-3 rounded-md flex items-center">
             <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
             {error}
           </div>
@@ -214,18 +244,18 @@ const CreateJob = () => {
 
         {/* Step 1: Basic Details */}
         {currentStep === 1 && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Basic Job Details</h2>
+          <div className="space-y-6 rounded-xl p-6 bg-white/80 backdrop-blur-sm shadow ring-1 ring-inset ring-gray-100">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-primary-700 to-indigo-700 bg-clip-text text-transparent">Basic Job Details</h2>
             
             <div className="grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
                   Project Name
                 </label>
-                <input
+<input
                   type="text"
                   name="project_name"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   placeholder="e.g., Mobile App Development, Website Redesign"
                   value={basicDetails.project_name}
                   onChange={handleBasicDetailsChange}
@@ -234,13 +264,13 @@ const CreateJob = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+<label className="block text-sm font-medium text-gray-800 mb-2">
                   Role Title
                 </label>
                 <input
                   type="text"
                   name="role_title"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   placeholder="e.g., Senior Frontend Developer, UI/UX Designer"
                   value={basicDetails.role_title}
                   onChange={handleBasicDetailsChange}
@@ -249,13 +279,13 @@ const CreateJob = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+<label className="block text-sm font-medium text-gray-800 mb-2">
                   Role Description
                 </label>
                 <textarea
                   name="role_description"
                   rows={4}
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   placeholder="Briefly describe the role, key responsibilities, and what the candidate will be working on..."
                   value={basicDetails.role_description}
                   onChange={handleBasicDetailsChange}
@@ -268,7 +298,7 @@ const CreateJob = () => {
               <button
                 onClick={handleGenerateFields}
                 disabled={loading}
-                className="btn-primary flex items-center"
+                className="btn-primary flex items-center shadow hover:shadow-md transition bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -283,35 +313,37 @@ const CreateJob = () => {
 
         {/* Step 2: AI Generated Fields */}
         {currentStep === 2 && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">AI Generated Fields</h2>
+          <div className="space-y-6 rounded-xl p-6 bg-white/80 backdrop-blur-sm shadow ring-1 ring-inset ring-gray-100">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-primary-700 to-indigo-700 bg-clip-text text-transparent">AI Generated Fields</h2>
             <p className="text-gray-600">Review and edit the AI-generated fields below:</p>
 
             {/* Key Skills */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Key Skills
               </label>
               {aiFields.key_skills.map((skill, index) => (
                 <div key={index} className="flex items-center mb-2">
                   <input
                     type="text"
-                    className="input-field mr-2"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow mr-2"
                     value={skill}
                     onChange={(e) => handleArrayFieldChange('key_skills', index, e.target.value)}
                     placeholder="Enter skill"
                   />
                   <button
                     onClick={() => removeArrayItem('key_skills', index)}
-                    className="text-red-600 hover:text-red-800"
+                    className="text-red-600 hover:text-red-800 p-2 rounded-md hover:bg-red-50"
+                    title="Remove"
+                    aria-label="Remove"
                   >
-                    Remove
+                    <XMarkIcon className="h-5 w-5" />
                   </button>
                 </div>
               ))}
               <button
                 onClick={() => addArrayItem('key_skills')}
-                className="btn-outline flex items-center text-sm"
+                className="btn-outline flex items-center text-sm hover:bg-primary-500 hover:text-primary-700 ring-1 ring-inset ring-primary-200 rounded-md"
               >
                 <PlusIcon className="h-4 w-4 mr-1" />
                 Add Skill
@@ -320,11 +352,11 @@ const CreateJob = () => {
 
             {/* Required Experience */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Required Experience
               </label>
               <textarea
-                className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                 rows={3}
                 value={aiFields.required_experience}
                 onChange={(e) => handleAiFieldsChange('required_experience', e.target.value)}
@@ -333,15 +365,15 @@ const CreateJob = () => {
             </div>
 
             {/* Additional Details Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-100">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
                   Department
                 </label>
                 <input
                   type="text"
                   name="department"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   placeholder="e.g., Engineering, Marketing"
                   value={additionalDetails.department}
                   onChange={handleAdditionalDetailsChange}
@@ -349,13 +381,13 @@ const CreateJob = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
                   Location
                 </label>
                 <input
                   type="text"
                   name="location"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   placeholder="e.g., Remote, New York"
                   value={additionalDetails.location}
                   onChange={handleAdditionalDetailsChange}
@@ -363,12 +395,12 @@ const CreateJob = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
                   Job Type
                 </label>
                 <select
                   name="job_type"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   value={additionalDetails.job_type}
                   onChange={handleAdditionalDetailsChange}
                 >
@@ -380,12 +412,12 @@ const CreateJob = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
                   Experience Level
                 </label>
                 <select
                   name="experience_level"
-                  className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                   value={additionalDetails.experience_level}
                   onChange={handleAdditionalDetailsChange}
                 >
@@ -396,19 +428,20 @@ const CreateJob = () => {
                   <option value="lead">Lead/Principal</option>
                 </select>
               </div>
+
             </div>
 
             <div className="flex justify-between">
               <button
                 onClick={() => setCurrentStep(1)}
-                className="btn-secondary"
+className="btn-secondary shadow-sm hover:shadow transition"
               >
                 Back
               </button>
               <button
                 onClick={handleGenerateDescription}
                 disabled={loading}
-                className="btn-primary flex items-center"
+className="btn-primary flex items-center shadow hover:shadow-md transition"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -423,16 +456,16 @@ const CreateJob = () => {
 
         {/* Step 3: Job Description & Submit */}
         {currentStep === 3 && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">Job Description</h2>
+          <div className="space-y-6 rounded-xl p-6 bg-white/80 backdrop-blur-sm shadow ring-1 ring-inset ring-gray-100">
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-primary-700 to-indigo-700 bg-clip-text text-transparent">Job Description</h2>
             <p className="text-gray-600">Review and edit the AI-generated job description:</p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Short Description
               </label>
               <textarea
-                className="input-field"
+className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                 rows={3}
                 value={jobDescription.short_description}
                 onChange={(e) => handleDescriptionChange('short_description', e.target.value)}
@@ -441,29 +474,40 @@ const CreateJob = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-800 mb-2">
                 Full Job Description
               </label>
+              {/* Optional: Preview markdown below the textarea to help users see formatting */}
               <textarea
-                className="input-field"
+                className="input-field focus:ring-primary-500 focus:border-primary-500 transition-shadow"
                 rows={12}
                 value={jobDescription.description}
                 onChange={(e) => handleDescriptionChange('description', e.target.value)}
                 placeholder="Complete job description with responsibilities, requirements, and benefits"
               />
+              {/* Preview */}
+              {jobDescription.description?.trim() && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-md ring-1 ring-inset ring-gray-200">
+                  <div className="text-sm text-gray-600 mb-2">Preview</div>
+                  <div className="prose max-w-none">
+                    {/* keep plain here unless we import markdown; skip rendering in CreateJob for now */}
+                    {/* You asked for frontend markdown rendering primarily for Job Details; preview can be enabled later if desired */}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between">
               <button
                 onClick={() => setCurrentStep(2)}
-                className="btn-secondary"
+className="btn-secondary shadow-sm hover:shadow transition bg-white/80 backdrop-blur-sm ring-1 ring-gray-200"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmitJob}
                 disabled={loading}
-                className="btn-primary"
+className="btn-primary shadow hover:shadow-md transition bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700"
               >
                 {loading ? (
                   <div className="flex items-center">

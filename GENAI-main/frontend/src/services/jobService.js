@@ -3,12 +3,12 @@ import api, { llmApi } from './api';
 export const jobService = {
   // Job CRUD operations
   async getJobs(params = {}) {
-    const response = await api.get('/api/jobs', { params });
+    const response = await api.get('/api/jobs/', { params });
     return response.data;
   },
 
   async getPublicJobs(params = {}) {
-    const response = await api.get('/api/jobs/public', { params });
+    const response = await api.get('/api/jobs/public/', { params });
     return response.data;
   },
 
@@ -23,7 +23,7 @@ export const jobService = {
   },
 
   async createJob(jobData) {
-    const response = await api.post('/api/jobs', jobData);
+    const response = await api.post('/api/jobs/', jobData);
     return response.data;
   },
 

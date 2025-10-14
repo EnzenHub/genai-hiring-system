@@ -36,7 +36,6 @@ export const publicUploadApi = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
 // Request interceptor to add auth token (for regular API)
 api.interceptors.request.use(
   (config) => {
@@ -126,5 +125,4 @@ publicUploadApi.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 export default api;

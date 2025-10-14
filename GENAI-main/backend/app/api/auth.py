@@ -68,14 +68,22 @@ async def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
             detail="Password too long. Maximum length is 72 bytes."
         )
     
-    # Create new user without company assignment (company_id can be null)
+    # Get default company (first company in database) or use provided company_id
+    default_company_id = user_data.company_id
+    if default_company_id is None:
+        # Automatically assign to the first company (GenAI Solutions)
+        default_company = db.query(Company).first()
+        if default_company:
+            default_company_id = default_company.id
+    
+    # Create new user with automatic company assignment
     hashed_password = get_password_hash(user_data.password)
     db_user = User(
         email=user_data.email,
         full_name=user_data.full_name,
         hashed_password=hashed_password,
         user_type=user_data.user_type,
-        company_id=None  # Allow users to be created without company assignment
+        company_id=default_company_id  # Automatically assign to default company
     )
     
     db.add(db_user)

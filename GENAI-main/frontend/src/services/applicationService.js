@@ -11,7 +11,7 @@ export const applicationService = {
       }
     });
     
-    const response = await api.get('/api/applications', { params: cleanParams });
+    const response = await api.get('/api/applications/', { params: cleanParams });
     return response.data;
   },
 
@@ -42,7 +42,7 @@ export const applicationService = {
 
   // Application submission (public)
   async submitApplication(formData) {
-    const response = await publicUploadApi.post('/api/applications/apply', formData, {
+   const response = await publicUploadApi.post('/api/applications/apply', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

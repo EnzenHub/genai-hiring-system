@@ -8,7 +8,7 @@ import {
   ClockIcon, 
   ExclamationTriangleIcon 
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import api from '../services/api';
 
 const ResumeUpdate = () => {
   const { referenceNumber } = useParams();
@@ -25,7 +25,7 @@ const ResumeUpdate = () => {
   const fetchStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/resume-update/status/${referenceNumber}`);
+      const response = await api.get(`/api/resume-update/status/${referenceNumber}`);
       setStatus(response.data);
       setError(null);
     } catch (error) {
@@ -38,7 +38,7 @@ const ResumeUpdate = () => {
 
   const fetchGuidelines = async () => {
     try {
-      const response = await axios.get('/api/resume-update/guidelines');
+      const response = await api.get('/api/resume-update/guidelines');
       setGuidelines(response.data);
     } catch (error) {
       console.error('Error fetching guidelines:', error);
@@ -84,7 +84,7 @@ const ResumeUpdate = () => {
       const formData = new FormData();
       formData.append('resume', selectedFile);
       
-      const response = await axios.post(
+      const response = await api.post(
         `/api/resume-update/upload/${referenceNumber}`,
         formData,
         {

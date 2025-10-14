@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { jobService } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -14,11 +14,15 @@ import {
   UserIcon,
   TagIcon
 } from '@heroicons/react/24/outline';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import Swal from 'sweetalert2';
 
 const JobDetails = () => {
   const { jobId } = useParams();
   const id = jobId; // For backward compatibility with existing code
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,16 +56,43 @@ const JobDetails = () => {
   }, [loadJob]);
 
   const handleDeleteJob = async () => {
-    if (!window.confirm('Are you sure you want to delete this job?')) {
-      return;
-    }
-
     try {
-      await jobService.deleteJob(id);
-      navigate('/jobs');
+      const result = await Swal.fire({
+        title: 'Delete Job',
+        text: 'Are you sure you want to delete this job? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#dc2626', // Tailwind red-600
+        focusCancel: true,
+        showLoaderOnConfirm: true,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async () => {
+          try {
+            await jobService.deleteJob(id);
+          } catch (err) {
+            const msg = err.response?.data?.detail || 'Failed to delete job';
+            Swal.showValidationMessage(msg);
+            throw err;
+          }
+        }
+      });
+
+      if (result.isConfirmed) {
+        await Swal.fire({
+          title: 'Deleted',
+          text: 'Job deleted successfully',
+          icon: 'success',
+          timer: 1200,
+          showConfirmButton: false,
+          heightAuto: false,
+        });
+        navigate('/jobs');
+      }
     } catch (err) {
-      setError('Failed to delete job');
       console.error('Error deleting job:', err);
+      setError('Failed to delete job');
     }
   };
 
@@ -115,7 +146,7 @@ const JobDetails = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <button onClick={() => navigate('/jobs')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/jobs')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
@@ -136,7 +167,7 @@ const JobDetails = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <button onClick={() => navigate('/jobs')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/jobs')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
@@ -156,8 +187,8 @@ const JobDetails = () => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center">
-          <button onClick={() => navigate('/jobs')} className="mr-4">
-            <ArrowLeftIcon className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/jobs')} className="mr-4">
+            <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
@@ -193,19 +224,24 @@ const JobDetails = () => {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Job Description */}
-          <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Job Description</h2>
-            <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700">
-                {job.description || 'No description available.'}
-              </div>
+          <div className="card-themed-yellow">
+            <h2 className="text-lg font-semibold mb-4 heading-gradient">Job Description</h2>
+            <div className="prose max-w-none text-gray-700">
+              {/* Render markdown with GFM for bold, lists, etc. */}
+              {typeof job.description === 'string' && job.description.trim() ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {job.description}
+                </ReactMarkdown>
+               ) : (
+                 <div className="text-gray-700">No description available.</div>
+               )}
             </div>
           </div>
 
           {/* Requirements */}
           {job.requirements && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Requirements</h2>
+            <div className="card-themed-yellow">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Requirements</h2>
               <div className="prose max-w-none">
                 <div className="whitespace-pre-wrap text-gray-700">
                   {job.requirements}
@@ -216,8 +252,8 @@ const JobDetails = () => {
 
           {/* Benefits */}
           {job.benefits && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Benefits</h2>
+            <div className="card-themed-red">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Benefits</h2>
               <div className="prose max-w-none">
                 <div className="whitespace-pre-wrap text-gray-700">
                   {job.benefits}
@@ -228,13 +264,13 @@ const JobDetails = () => {
 
           {/* Key Skills */}
           {job.key_skills && job.key_skills.length > 0 && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Key Skills Required</h2>
+            <div className="card-themed-cyan">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Key Skills Required</h2>
               <div className="flex flex-wrap gap-2">
                 {job.key_skills.map((skill, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full"
+                    className="inline-block bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full ring-1 ring-inset ring-primary-200"
                   >
                     {skill}
                   </span>
@@ -247,9 +283,10 @@ const JobDetails = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Job Info */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Job Information</h3>
+          <div className="card-themed-cyan">
+            <h3 className="text-lg font-semibold mb-4 heading-gradient">Job Information</h3>
             <div className="space-y-3">
+              {/* Department */}
               {job.department && (
                 <div className="flex items-center">
                   <BuildingOfficeIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -259,7 +296,7 @@ const JobDetails = () => {
                   </div>
                 </div>
               )}
-
+              {/* Location */}
               {job.location && (
                 <div className="flex items-center">
                   <MapPinIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -269,7 +306,7 @@ const JobDetails = () => {
                   </div>
                 </div>
               )}
-
+              {/* Job Type */}
               {job.job_type && (
                 <div className="flex items-center">
                   <ClockIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -279,7 +316,7 @@ const JobDetails = () => {
                   </div>
                 </div>
               )}
-
+              {/* Experience Level */}
               {job.experience_level && (
                 <div className="flex items-center">
                   <UserIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -289,43 +326,39 @@ const JobDetails = () => {
                   </div>
                 </div>
               )}
-
+              {/* Salary Range */}
               {(job.salary_min || job.salary_max) && (
                 <div className="flex items-center">
                   <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <div className="text-sm text-gray-500">Salary Range</div>
                     <div className="font-medium">
-                      {job.salary_min && job.salary_max 
+                      {job.salary_min && job.salary_max
                         ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-                        : job.salary_min 
+                        : job.salary_min
                         ? `From $${job.salary_min.toLocaleString()}`
-                        : job.salary_max 
+                        : job.salary_max
                         ? `Up to $${job.salary_max.toLocaleString()}`
                         : 'Not specified'}
                     </div>
                   </div>
                 </div>
               )}
-
+              {/* Created Date */}
               <div className="flex items-center">
                 <CalendarDaysIcon className="h-5 w-5 text-gray-400 mr-3" />
                 <div>
                   <div className="text-sm text-gray-500">Created Date</div>
-                  <div className="font-medium">
-                    {new Date(job.created_at).toLocaleDateString()}
-                  </div>
+                  <div className="font-medium">{new Date(job.created_at).toLocaleDateString()}</div>
                 </div>
               </div>
-
+              {/* Deadline */}
               {job.deadline && (
                 <div className="flex items-center">
                   <TagIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <div className="text-sm text-gray-500">Application Deadline</div>
-                    <div className="font-medium">
-                      {new Date(job.deadline).toLocaleDateString()}
-                    </div>
+                    <div className="font-medium">{new Date(job.deadline).toLocaleDateString()}</div>
                   </div>
                 </div>
               )}
@@ -333,14 +366,16 @@ const JobDetails = () => {
           </div>
 
           {/* Additional Info */}
-          {job.short_description && (
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-3">Summary</h3>
-              <p className="text-gray-700 text-sm leading-relaxed">
-                {job.short_description}
-              </p>
-            </div>
-          )}
+         {typeof job.short_description === 'string' && job.short_description.trim() && (
+             <div className="card-themed-red">
+               <h3 className="text-lg font-semibold mb-3 heading-gradient">Summary</h3>
+               <div className="prose max-w-none text-gray-700 text-sm leading-relaxed">
+                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                   {job.short_description}
+                 </ReactMarkdown>
+               </div>
+             </div>
+           )}
         </div>
       </div>
     </div>

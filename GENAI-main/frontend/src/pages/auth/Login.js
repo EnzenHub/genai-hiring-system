@@ -8,6 +8,7 @@ const Login = () => {
     password: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { login, error, clearError } = useAuth();
   const navigate = useNavigate();
@@ -47,90 +48,102 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/careers"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              browse jobs as a candidate
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    // Background container
+    <div
+      className="min-h-screen relative"
+      style={{
+        backgroundImage: "url(/images/Media.jpeg)",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/70" />
+
+      {/* Centered card */}
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-black rounded-2xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img src="/images/Nxzen.jpg" alt="Nxzen logo" className="h-12 w-16" />
+          </div>
+
+          {/* Title */}
+          <h2 className="text-center text-xl font-semibold text-white mb-6">Sign In</h2>
+
+          {/* Error */}
           {error && (
-            <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
+            <div className="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded-md">
               {error}
             </div>
           )}
-          
-          <div className="rounded-md shadow-sm -space-y-px">
+
+          {/* Form */}
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
+              <label htmlFor="email" className="sr-only">Email address</label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter your company email"
                 value={formData.email}
                 onChange={handleChange}
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
+
+            {/* Password */}
+            <div className="relative">
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className="block w-full px-3 py-2 pr-10 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute inset-y-0 right-2 flex items-center text-gray-300 hover:text-white"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
             </div>
-          </div>
 
-          <div>
+            {/* Forgot password */}
+            <div className="flex justify-end">
+              <Link to="/register" className="text-xs text-green-400 hover:text-green-300">
+                New User? Register
+              </Link>
+            </div>
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="flex items-center">
+                <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Signing in...
                 </div>
               ) : (
-                'Sign in'
+                'Sign In'
               )}
             </button>
-          </div>
-
-          <div className="text-sm text-center">
-            <Link
-              to="/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              Need an account? Register here
-            </Link>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

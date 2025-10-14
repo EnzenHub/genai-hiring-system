@@ -10,8 +10,13 @@ import {
   ClockIcon,
   UserIcon,
   TagIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  ShareIcon,
+  LinkIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const JobDetailsPublic = () => {
   const { jobId } = useParams();
@@ -40,7 +45,7 @@ const JobDetailsPublic = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -52,11 +57,11 @@ const JobDetailsPublic = () => {
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50">
         <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="card">
+          <div className="card bg-gradient-to-br from-red-50 to-rose-100 backdrop-blur border border-rose-200 rounded-2xl shadow-sm">
             <div className="text-center py-12">
-              <BriefcaseIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <BriefcaseIcon className="h-16 w-16 text-rose-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Job Not Found</h3>
               <p className="text-gray-600 mb-4">
                 {error || 'The requested job could not be found.'}
@@ -72,7 +77,7 @@ const JobDetailsPublic = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -83,10 +88,10 @@ const JobDetailsPublic = () => {
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Back to Jobs
           </Link>
-          <div className="card">
+          <div className="card bg-gradient-to-br from-sky-50 to-indigo-100 backdrop-blur border border-indigo-200 rounded-2xl shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h1>
                 <div className="flex flex-wrap gap-4 text-gray-600 mb-4">
                   {job.department && (
                     <div className="flex items-center">
@@ -107,16 +112,18 @@ const JobDetailsPublic = () => {
                     </div>
                   )}
                 </div>
-                {job.short_description && (
-                  <p className="text-gray-700 text-lg leading-relaxed">
-                    {job.short_description}
-                  </p>
+                {typeof job.short_description === 'string' && job.short_description.trim() && (
+                  <div className="prose max-w-none text-gray-700 text-base leading-relaxed">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {job.short_description}
+                    </ReactMarkdown>
+                  </div>
                 )}
               </div>
               <div className="mt-6 md:mt-0 md:ml-6">
                 <Link
                   to={`/careers/apply/${job.id}`}
-                  className="btn-primary text-lg px-8 py-3 w-full md:w-auto text-center"
+                  className="btn-primary text-base px-8 py-3 w-full md:w-auto text-center"
                 >
                   Apply Now
                 </Link>
@@ -125,52 +132,52 @@ const JobDetailsPublic = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-5">
             {/* Job Description */}
-            <div className="card">
-              <h2 className="text-xl font-semibold mb-4">About This Role</h2>
+            <div className="card bg-gradient-to-br from-emerald-50 to-teal-100 backdrop-blur border border-teal-200 rounded-2xl shadow-sm">
+              <h2 className="text-lg font-semibold mb-4">About This Role</h2>
               <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
                   {job.description || 'No description available.'}
                 </div>
               </div>
             </div>
 
             {/* Requirements */}
-            {job.requirements && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-4">What We're Looking For</h2>
+            {typeof job.requirements === 'string' && job.requirements.trim() && (
+              <div className="card bg-gradient-to-br from-amber-50 to-yellow-100 backdrop-blur border border-amber-200 rounded-2xl shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">What We're Looking For</h2>
                 <div className="prose max-w-none">
-                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-gray-700 text-sm leading-relaxed">
                     {job.requirements}
-                  </div>
+                  </ReactMarkdown>
                 </div>
               </div>
             )}
 
             {/* Benefits */}
-            {job.benefits && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-4">What We Offer</h2>
+            {typeof job.benefits === 'string' && job.benefits.trim() && (
+              <div className="card bg-gradient-to-br from-rose-50 to-pink-100 backdrop-blur border border-rose-200 rounded-2xl shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">What We Offer</h2>
                 <div className="prose max-w-none">
-                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-gray-700 text-sm leading-relaxed">
                     {job.benefits}
-                  </div>
+                  </ReactMarkdown>
                 </div>
               </div>
             )}
 
             {/* Key Skills */}
             {job.key_skills && job.key_skills.length > 0 && (
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-4">Key Skills & Technologies</h2>
+              <div className="card bg-gradient-to-br from-violet-50 to-fuchsia-100 backdrop-blur border border-violet-200 rounded-2xl shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Key Skills & Technologies</h2>
                 <div className="flex flex-wrap gap-3">
                   {job.key_skills.map((skill, index) => (
                     <span
                       key={index}
-                      className="inline-block bg-primary-100 text-primary-800 text-sm font-medium px-4 py-2 rounded-full"
+                      className="inline-block bg-primary-100 text-primary-800 text-xs font-medium px-3 py-1.5 rounded-full"
                     >
                       {skill}
                     </span>
@@ -180,36 +187,71 @@ const JobDetailsPublic = () => {
             )}
 
             {/* Apply Section */}
-            <div className="card bg-primary-50 border-primary-200">
+            <div className="card bg-gradient-to-br from-indigo-50 to-primary-100 border border-primary-200 rounded-2xl shadow-sm">
               <div className="text-center">
                 <h2 className="text-xl font-semibold text-primary-900 mb-2">
                   Ready to Join Our Team?
                 </h2>
-                <p className="text-primary-700 mb-4">
+                <p className="text-primary-700 text-sm mb-4">
                   We'd love to hear from you! Submit your application today.
                 </p>
                 <Link
                   to={`/careers/${job.id}/apply`}
-                  className="btn-primary text-lg px-8 py-3"
+                  className="btn-primary text-sm px-8 py-3"
                 >
                   Apply for This Position
                 </Link>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    title="Share"
+                    className="btn-secondary text-sm inline-flex items-center gap-2"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({ title: job.title, url: window.location.href }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                      }
+                    }}
+                  >
+                    <ShareIcon className="h-5 w-5" />
+                    <span>Share</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Copy Link"
+                    className="btn-secondary text-sm inline-flex items-center gap-2"
+                    onClick={() => navigator.clipboard.writeText(window.location.href)}
+                  >
+                    <LinkIcon className="h-5 w-5" />
+                    <span>Link</span>
+                  </button>
+                  <button
+                    type="button"
+                    title="Email"
+                    className="btn-secondary text-sm inline-flex items-center gap-2"
+                    onClick={() => window.open(`mailto:?subject=${encodeURIComponent(job.title)}&body=${encodeURIComponent(window.location.href)}`, '_blank')}
+                  >
+                    <EnvelopeIcon className="h-5 w-5" />
+                    <span>Email</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Job Information */}
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Job Details</h3>
+            <div className="card bg-gradient-to-br from-blue-50 to-cyan-100 backdrop-blur border border-cyan-200 rounded-2xl shadow-sm">
+              <h3 className="text-base font-semibold mb-4">Job Details</h3>
               <div className="space-y-4">
                 {job.job_type && (
                   <div className="flex items-start">
                     <ClockIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                     <div>
                       <div className="text-sm text-gray-500">Employment Type</div>
-                      <div className="font-medium capitalize">{job.job_type.replace('-', ' ')}</div>
+                      <div className="font-medium text-sm capitalize">{job.job_type.replace('-', ' ')}</div>
                     </div>
                   </div>
                 )}
@@ -219,7 +261,7 @@ const JobDetailsPublic = () => {
                     <UserIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                     <div>
                       <div className="text-sm text-gray-500">Experience Level</div>
-                      <div className="font-medium capitalize">{job.experience_level} Level</div>
+                      <div className="font-medium text-sm capitalize">{job.experience_level} Level</div>
                     </div>
                   </div>
                 )}
@@ -246,7 +288,7 @@ const JobDetailsPublic = () => {
                   <CalendarDaysIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                   <div>
                     <div className="text-sm text-gray-500">Posted Date</div>
-                    <div className="font-medium">
+                    <div className="font-medium text-sm">
                       {new Date(job.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -257,7 +299,7 @@ const JobDetailsPublic = () => {
                     <TagIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                     <div>
                       <div className="text-sm text-gray-500">Application Deadline</div>
-                      <div className="font-medium">
+                      <div className="font-medium text-sm">
                         {new Date(job.deadline).toLocaleDateString()}
                       </div>
                     </div>
@@ -267,9 +309,9 @@ const JobDetailsPublic = () => {
             </div>
 
             {/* Company Info */}
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-3">About the Company</h3>
-              <p className="text-gray-700 leading-relaxed">
+            <div className="card bg-gradient-to-br from-lime-50 to-green-100 backdrop-blur border border-lime-200 rounded-2xl shadow-sm">
+              <h3 className="text-base font-semibold mb-3">About the Company</h3>
+              <p className="text-gray-700 text-sm leading-relaxed">
                 Join our innovative team and be part of building the future of technology. 
                 We offer a collaborative environment, competitive benefits, and opportunities 
                 for professional growth.
@@ -277,15 +319,15 @@ const JobDetailsPublic = () => {
             </div>
 
             {/* Application Process */}
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-3">Application Process</h3>
+            <div className="card bg-gradient-to-br from-zinc-50 to-stone-100 backdrop-blur border border-stone-200 rounded-2xl shadow-sm">
+              <h3 className="text-base font-semibold mb-3">Application Process</h3>
               <div className="space-y-3">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium mr-3">
                     1
                   </div>
                   <div>
-                    <div className="font-medium text-sm">Submit Application</div>
+                    <div className="font-medium text-xs">Submit Application</div>
                     <div className="text-xs text-gray-600">Upload your resume and cover letter</div>
                   </div>
                 </div>
@@ -294,7 +336,7 @@ const JobDetailsPublic = () => {
                     2
                   </div>
                   <div>
-                    <div className="font-medium text-sm">AI Screening</div>
+                    <div className="font-medium text-xs">AI Screening</div>
                     <div className="text-xs text-gray-600">Automated analysis of your qualifications</div>
                   </div>
                 </div>
@@ -303,7 +345,7 @@ const JobDetailsPublic = () => {
                     3
                   </div>
                   <div>
-                    <div className="font-medium text-sm">HR Review</div>
+                    <div className="font-medium text-xs">HR Review</div>
                     <div className="text-xs text-gray-600">Human review and shortlisting</div>
                   </div>
                 </div>
@@ -312,31 +354,14 @@ const JobDetailsPublic = () => {
                     4
                   </div>
                   <div>
-                    <div className="font-medium text-sm">Interview</div>
+                    <div className="font-medium text-xs">Interview</div>
                     <div className="text-xs text-gray-600">Technical and cultural fit interview</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Share Job */}
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-3">Share This Job</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => navigator.clipboard.writeText(window.location.href)}
-                  className="flex-1 btn-secondary text-sm"
-                >
-                  Copy Link
-                </button>
-                <button
-                  onClick={() => window.open(`mailto:?subject=${encodeURIComponent(job.title)}&body=${encodeURIComponent(window.location.href)}`, '_blank')}
-                  className="flex-1 btn-secondary text-sm"
-                >
-                  Share via Email
-                </button>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>

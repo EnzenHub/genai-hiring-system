@@ -104,7 +104,7 @@ REM Wait for Backend to be ready
 echo 🔍 Waiting for Backend API...
 :wait_backend
 timeout /t 5 /nobreak >nul
-curl -f http://localhost:8000/health >nul 2>&1
+curl -f http://149.102.158.71:6002/health >nul 2>&1
 if errorlevel 1 (
     echo    Backend still starting...
     goto wait_backend
@@ -115,7 +115,7 @@ REM Wait for Frontend to be ready
 echo 🔍 Waiting for Frontend...
 :wait_frontend
 timeout /t 5 /nobreak >nul
-curl -f http://localhost:3000 >nul 2>&1
+curl -f http://149.102.158.71:6003 >nul 2>&1
 if errorlevel 1 (
     echo    Frontend still starting...
     goto wait_frontend

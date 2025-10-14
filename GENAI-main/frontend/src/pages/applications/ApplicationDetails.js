@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { applicationService } from '../../services/applicationService';
 import { interviewService } from '../../services/interviewService';
 import { useAuth } from '../../context/AuthContext';
@@ -17,11 +17,13 @@ import {
   EyeIcon,
   UserPlusIcon
 } from '@heroicons/react/24/outline';
+import Swal from 'sweetalert2';
 
 const ApplicationDetails = () => {
   const { applicationId } = useParams();
   const id = applicationId; // For backward compatibility with existing code
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,22 +52,21 @@ const ApplicationDetails = () => {
     loadApplication();
   }, [loadApplication]);
 
-  // Auto-refresh for applications with resume update requests
-  useEffect(() => {
-    if (!application) return;
-    
-    // Check if this application has an active resume update request
-    const hasResumeUpdateRequest = application.status === 'resume_update_requested' || 
-                                   application.status === 'pending_llm_evaluation';
-    
-    if (hasResumeUpdateRequest) {
-      // Poll every 30 seconds to check for updates
-      const interval = setInterval(() => {
-        loadApplication();
-      }, 30000);
-      
-      return () => clearInterval(interval);
-    }
+  // Auto-refresh for applications with resume update requests 
+  useEffect(() => { 
+    if (!application) return; 
+ 
+    // Check if this application has an active resume update request or was just selected after an update
+    const shouldAutoRefresh = ['resume_update_requested', 'pending_llm_evaluation', 'selected'].includes(application.status);
+ 
+    if (shouldAutoRefresh) { 
+      // Poll every 30 seconds to check for updates 
+      const interval = setInterval(() => { 
+        loadApplication(); 
+      }, 30000); 
+ 
+      return () => clearInterval(interval); 
+    } 
   }, [application, loadApplication]);
 
   const handleStatusUpdate = async (newStatus) => {
@@ -76,6 +77,34 @@ const ApplicationDetails = () => {
     } catch (err) {
       setError('Failed to update application status');
       console.error('Error updating application:', err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRescore = async () => {
+    try {
+      setUpdating(true);
+      const result = await applicationService.rescoreApplication(id);
+      Swal.fire({
+        title: 'Application Rescored',
+        text: result?.message ? `${result.message}${result?.score ? ` (Score: ${result.score})` : ''}` : `New AI score: ${result?.score ?? ''}`,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
+      await loadApplication();
+      setError('');
+    } catch (err) {
+      setError('Failed to rescore application');
+      console.error('Error rescoring application:', err);
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to rescore application',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } finally {
       setUpdating(false);
     }
@@ -115,18 +144,31 @@ const ApplicationDetails = () => {
       setUpdating(true);
       const result = await interviewService.markInterviewCompleted(id);
       
-      // Show success message with review token info
-      if (result && result.message) {
-        alert(result.message);
-      } else {
-        alert('Interview marked as completed and review tokens sent successfully!');
-      }
+      // Show success message with review token info using SweetAlert2 centered modal
+      const message = (result && result.message)
+        ? result.message
+        : 'Interview marked as completed and review tokens sent successfully!';
+
+      Swal.fire({
+        title: 'Success',
+        text: message,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
       
       await loadApplication(); // Reload data
       setError('');
     } catch (err) {
       setError('Failed to mark interview as completed and send review tokens');
       console.error('Error marking interview completed:', err);
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to mark interview as completed and send review tokens',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } finally {
       setUpdating(false);
     }
@@ -246,7 +288,7 @@ const ApplicationDetails = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <button onClick={() => navigate('/applications')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/applications')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
@@ -265,7 +307,7 @@ const ApplicationDetails = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <button onClick={() => navigate('/applications')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/applications')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
@@ -273,7 +315,7 @@ const ApplicationDetails = () => {
             <p className="text-gray-600">Error loading application</p>
           </div>
         </div>
-        <div className="card">
+        <div className="card bg-gradient-to-br from-teal-50 to-emerald-100">
           <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
             {error || 'Application not found'}
           </div>
@@ -287,38 +329,18 @@ const ApplicationDetails = () => {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center">
-          <button onClick={() => navigate('/applications')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/applications')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600 hover:text-gray-800" />
           </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{application.candidate_name}</h1>
             <p className="text-gray-600">Application for {application.job_title}</p>
-            <div className="flex items-center mt-2 space-x-4">
+            <div className="flex items-center mt-2">
               <span className={`status-badge ${getStatusColor(application.status)}`}>
                 {getStatusText(application.status)}
               </span>
-              {application.updated_at && (
-                <span className="text-sm text-gray-500">
-                  Last updated: {new Date(application.updated_at).toLocaleString()}
-                </span>
-              )}
             </div>
           </div>
-        </div>
-
-        {/* Refresh Button */}
-        <div className="flex space-x-2">
-          <button
-            onClick={loadApplication}
-            disabled={loading}
-            className="btn-secondary flex items-center"
-            title="Refresh application data"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
         </div>
 
         {/* Status Update Actions */}
@@ -326,6 +348,7 @@ const ApplicationDetails = () => {
           <div className="flex space-x-2">
             {(application.status === 'pending' || application.status === 'under_review') && (
               <>
+                {/* Rescore button removed */}
                 <button
                   onClick={() => handleStatusUpdate('shortlisted')}
                   disabled={updating}
@@ -371,7 +394,7 @@ const ApplicationDetails = () => {
               <button
                 onClick={handleFetchAvailability}
                 disabled={updating}
-                className="btn-primary flex items-center"
+                className="flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium px-4 py-2 rounded-md transition-colors"
               >
                 <CalendarDaysIcon className="h-4 w-4 mr-2" />
                 Fetch Availability
@@ -379,23 +402,14 @@ const ApplicationDetails = () => {
             )}
 
             {/* SLOT_SELECTED - HR can schedule interview */}
-            {application.status === 'slot_selected' && (
-              <button
-                onClick={() => setShowScheduleModal(true)}
-                disabled={updating}
-                className="btn-success flex items-center"
-              >
-                <UserPlusIcon className="h-4 w-4 mr-2" />
-                Schedule Interview
-              </button>
-            )}
+            {/* Moved to Interview Details card header */}
 
             {/* INTERVIEW_CONFIRMED - HR can mark as completed (auto-sends review tokens) */}
             {application.status === 'interview_confirmed' && (
               <button
                 onClick={handleMarkInterviewCompleted}
                 disabled={updating}
-                className="btn-warning flex items-center"
+                className="flex items-center bg-purple-500 hover:bg-purple-600 text-white font-medium px-4 py-2 rounded-md transition-colors"
               >
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
                 Mark Interview Completed & Send Review Tokens
@@ -449,232 +463,238 @@ const ApplicationDetails = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 gap-4">
         {/* Main Content */}
-        <div className="xl:col-span-3 lg:col-span-2 space-y-4 lg:space-y-6">
+        <div className="xl:col-span-3 lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* AI Analysis */}
           {(application.ai_score || application.match_score || application.ats_score) && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-3">AI Analysis</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                {application.ai_score && (
-                  <div className={`p-3 rounded-lg ${getScoreColor(application.ai_score)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">Overall AI Score</span>
-                      <StarIcon className="h-4 w-4" />
-                    </div>
-                    <div className="text-xl font-bold">{application.ai_score}%</div>
-                  </div>
-                )}
-                {application.match_score && (
-                  <div className={`p-3 rounded-lg ${getScoreColor(application.match_score)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">Match Score</span>
-                      <CheckCircleIcon className="h-4 w-4" />
-                    </div>
-                    <div className="text-xl font-bold">{application.match_score}%</div>
-                  </div>
-                )}
-                {application.ats_score && (
-                  <div className={`p-3 rounded-lg ${getScoreColor(application.ats_score)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">ATS Score</span>
-                      <DocumentTextIcon className="h-4 w-4" />
-                    </div>
-                    <div className="text-xl font-bold">{application.ats_score}%</div>
-                  </div>
-                )}
-              </div>
-              
-              {application.ai_summary && (
-                <div>
-                  <h3 className="font-medium mb-2">AI Summary</h3>
-                  <p className="text-gray-700 leading-relaxed">{application.ai_summary}</p>
-                </div>
-              )}
+            <div className="card bg-gradient-to-br from-sky-50 to-indigo-100 md:col-span-2 h-[52vh] overflow-y-auto">
+               <h2 className="text-lg font-semibold mb-3">AI Analysis</h2>
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                 {application.ai_score && (
+                   <div className={`p-3 rounded-lg ${getScoreColor(application.ai_score)}`}>
+                     <div className="flex items-center justify-between mb-1">
+                       <span className="text-xs font-medium">Overall AI Score</span>
+                       <StarIcon className="h-4 w-4" />
+                     </div>
+                     <div className="text-xl font-bold">{application.ai_score}%</div>
+                   </div>
+                 )}
+                 {application.match_score && (
+                   <div className={`p-3 rounded-lg ${getScoreColor(application.match_score)}`}>
+                     <div className="flex items-center justify-between mb-1">
+                       <span className="text-xs font-medium">Match Score</span>
+                       <CheckCircleIcon className="h-4 w-4" />
+                     </div>
+                     <div className="text-xl font-bold">{application.match_score}%</div>
+                   </div>
+                 )}
+                 {application.ats_score && (
+                   <div className={`p-3 rounded-lg ${getScoreColor(application.ats_score)}`}>
+                     <div className="flex items-center justify-between mb-1">
+                       <span className="text-xs font-medium">ATS Score</span>
+                       <DocumentTextIcon className="h-4 w-4" />
+                     </div>
+                     <div className="text-xl font-bold">{application.ats_score}%</div>
+                   </div>
+                 )}
+               </div>
+               
+               {application.ai_summary && (
+                 <div>
+                   <h3 className="font-medium mb-2">AI Summary</h3>
+                   <p className="text-gray-700 leading-relaxed">{application.ai_summary}</p>
+                 </div>
+               )}
+             </div>
+          )}
+
+          {interviewDetails && (
+            <div className="md:col-span-2">
+              <InterviewDetailsCard 
+                details={interviewDetails}
+                application={application}
+                updating={updating}
+                onScheduleClick={() => setShowScheduleModal(true)}
+              />
             </div>
           )}
 
           {/* Cover Letter */}
           {application.cover_letter && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Cover Letter</h2>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700">
-                  {application.cover_letter}
-                </div>
-              </div>
-            </div>
+            <div className="card bg-gradient-to-br from-rose-50 to-pink-100">
+               <h2 className="text-lg font-semibold mb-4">Cover Letter</h2>
+               <div className="prose max-w-none">
+                 <div className="whitespace-pre-wrap text-gray-700">
+                   {application.cover_letter}
+                 </div>
+               </div>
+             </div>
           )}
 
           {/* Resume Content */}
           {application.resume_text && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Resume Content</h2>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700 text-sm">
-                  {application.resume_text}
-                </div>
-              </div>
-            </div>
+            <div className="card bg-gradient-to-br from-gray-50 to-slate-100">
+               <h2 className="text-lg font-semibold mb-4">Resume Content</h2>
+               <div className="prose max-w-none">
+                 <div className="whitespace-pre-wrap text-gray-700 text-sm">
+                   {application.resume_text}
+                 </div>
+               </div>
+             </div>
           )}
 
           {/* Skills Match */}
           {application.skills_match && application.skills_match.length > 0 && (
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Skills Analysis</h2>
-              <div className="space-y-2">
-                {application.skills_match.map((skill, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <span className="font-medium">{skill.skill}</span>
-                    <span className={`text-sm ${skill.match ? 'text-green-600' : 'text-red-600'}`}>
-                      {skill.match ? '✓ Match' : '✗ Missing'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <div className="card bg-gradient-to-br from-emerald-50 to-green-100">
+               <h2 className="text-lg font-semibold mb-4">Skills Analysis</h2>
+               <div className="space-y-2">
+                 {application.skills_match.map((skill, index) => (
+                   <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                     <span className="font-medium">{skill.skill}</span>
+                     <span className={`text-sm ${skill.match ? 'text-green-600' : 'text-red-600'}`}>
+                       {skill.match ? '✓ Match' : '✗ Missing'}
+                     </span>
+                   </div>
+                 ))}
+               </div>
+             </div>
           )}
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4 lg:space-y-6">
+        <div className="grid grid-cols-1 gap-4">
           {/* Candidate Info */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-3">Candidate Information</h3>
-            <div className="space-y-2.5">
-              <div className="flex items-start">
-                <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Name</div>
-                  <div className="font-medium text-sm truncate">{application.candidate_name}</div>
-                </div>
-              </div>
+          <div className="card bg-gradient-to-br from-amber-50 to-orange-100">
+             <h3 className="text-lg font-semibold mb-3">Candidate Information</h3>
+             <div className="space-y-2.5">
+               <div className="flex items-start">
+                 <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                 <div className="min-w-0 flex-1">
+                   <div className="text-xs text-gray-500 uppercase tracking-wide">Name</div>
+                   <div className="font-medium text-sm truncate">{application.candidate_name}</div>
+                 </div>
+               </div>
 
-              <div className="flex items-start">
-                <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Email</div>
-                  <div className="font-medium text-sm truncate" title={application.candidate_email}>
-                    {application.candidate_email}
-                  </div>
-                </div>
-              </div>
+               <div className="flex items-start">
+                 <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                 <div className="min-w-0 flex-1">
+                   <div className="text-xs text-gray-500 uppercase tracking-wide">Email</div>
+                   <div className="font-medium text-sm truncate" title={application.candidate_email}>
+                     {application.candidate_email}
+                   </div>
+                 </div>
+               </div>
 
-              {application.candidate_phone && (
-                <div className="flex items-start">
-                  <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs text-gray-500 uppercase tracking-wide">Phone</div>
-                    <div className="font-medium text-sm">{application.candidate_phone}</div>
-                  </div>
-                </div>
-              )}
+               {application.candidate_phone && (
+                 <div className="flex items-start">
+                   <UserIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                   <div className="min-w-0 flex-1">
+                     <div className="text-xs text-gray-500 uppercase tracking-wide">Phone</div>
+                     <div className="font-medium text-sm">{application.candidate_phone}</div>
+                   </div>
+                 </div>
+               )}
 
-              <div className="flex items-start">
-                <BriefcaseIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Position</div>
-                  <div className="font-medium text-sm">{application.job_title}</div>
-                </div>
-              </div>
+               <div className="flex items-start">
+                 <BriefcaseIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                 <div className="min-w-0 flex-1">
+                   <div className="text-xs text-gray-500 uppercase tracking-wide">Position</div>
+                   <div className="font-medium text-sm">{application.job_title}</div>
+                 </div>
+               </div>
 
-              <div className="flex items-start">
-                <CalendarDaysIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-gray-500 uppercase tracking-wide">Applied</div>
-                  <div className="font-medium text-sm">
-                    {new Date(application.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+               <div className="flex items-start">
+                 <CalendarDaysIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5 flex-shrink-0" />
+                 <div className="min-w-0 flex-1">
+                   <div className="text-xs text-gray-500 uppercase tracking-wide">Applied</div>
+                   <div className="font-medium text-sm">
+                     {new Date(application.created_at).toLocaleDateString()}
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
 
           {/* Resume Download */}
           {application.resume_filename && (
-            <div className="card">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-semibold">Resume</h3>
-                {application.resume_filename && application.resume_filename.includes('updated') && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Updated
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center min-w-0 flex-1">
-                  <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-2.5 flex-shrink-0" />
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm truncate" title={application.resume_filename}>
-                      {application.resume_filename.split('-').slice(-1)[0] || 'Resume File'}
-                    </div>
-                    <div className="text-xs text-gray-500">PDF Document</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => window.open(application.resume_url, '_blank')}
-                  className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors flex-shrink-0"
-                  title="View Resume"
-                >
-                  <EyeIcon className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+            <div className="card bg-gradient-to-br from-sky-50 to-cyan-100">
+               <h3 className="text-lg font-semibold mb-2">Resume</h3>
+               <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                 <div className="flex items-center min-w-0 flex-1">
+                   <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-2.5 flex-shrink-0" />
+                   <div className="min-w-0">
+                     <div className="font-medium text-sm truncate" title={application.resume_filename}>
+                       {application.resume_filename.split('-').slice(-1)[0] || 'Resume File'}
+                     </div>
+                     <div className="text-xs text-gray-500">PDF Document</div>
+                   </div>
+                 </div>
+                 <button
+                   onClick={() => {
+                     const baseApiUrl = process.env.REACT_APP_API_URL || 'http://149.102.158.71:6002';
+                     const resumePath = application.resume_url || `/uploads/${application.resume_filename}`;
+                     const absoluteUrl = resumePath.startsWith('http') ? resumePath : `${baseApiUrl}${resumePath}`;
+                     window.open(absoluteUrl, '_blank');
+                   }}
+                   className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors flex-shrink-0"
+                   title="View Resume"
+                 >
+                   <EyeIcon className="h-4 w-4" />
+                 </button>
+               </div>
+             </div>
           )}
 
           {/* Additional Info */}
           {application.additional_info && (
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
-              <p className="text-gray-700 text-sm leading-relaxed">
-                {application.additional_info}
-              </p>
-            </div>
+            <div className="card bg-gradient-to-br from-violet-50 to-purple-100">
+               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
+               <p className="text-gray-700 text-sm leading-relaxed">
+                 {application.additional_info}
+               </p>
+             </div>
           )}
 
           {/* Application Timeline */}
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-2">Timeline</h3>
-            <div className="space-y-2.5">
-              <div className="flex items-start">
-                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">Application Submitted</div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(application.created_at).toLocaleDateString()} at {new Date(application.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </div>
-                </div>
-              </div>
-              
-              {application.processed_at && (
-                <div className="flex items-start">
-                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">AI Processing Complete</div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(application.processed_at).toLocaleDateString()} at {new Date(application.processed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {application.updated_at !== application.created_at && (
-                <div className="flex items-start">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium">Status Updated</div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(application.updated_at).toLocaleDateString()} at {new Date(application.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="card bg-gradient-to-br from-slate-50 to-gray-100">
+             <h3 className="text-lg font-semibold mb-2">Timeline</h3>
+             <div className="space-y-2.5">
+               <div className="flex items-start">
+                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                 <div className="min-w-0">
+                   <div className="text-sm font-medium">Application Submitted</div>
+                   <div className="text-xs text-gray-500">
+                     {new Date(application.created_at).toLocaleDateString()} at {new Date(application.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                   </div>
+                 </div>
+               </div>
+               
+               {application.processed_at && (
+                 <div className="flex items-start">
+                   <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                   <div className="min-w-0">
+                     <div className="text-sm font-medium">AI Processing Complete</div>
+                     <div className="text-xs text-gray-500">
+                       {new Date(application.processed_at).toLocaleDateString()} at {new Date(application.processed_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                     </div>
+                   </div>
+                 </div>
+               )}
+               
+               {application.updated_at !== application.created_at && (
+                 <div className="flex items-start">
+                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2.5 mt-1.5 flex-shrink-0"></div>
+                   <div className="min-w-0">
+                     <div className="text-sm font-medium">Status Updated</div>
+                     <div className="text-xs text-gray-500">
+                       {new Date(application.updated_at).toLocaleDateString()} at {new Date(application.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                     </div>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
         </div>
       </div>
 
@@ -688,15 +708,6 @@ const ApplicationDetails = () => {
         />
       )}
 
-      {/* Interview Details Section */}
-      {interviewDetails && (
-        <div className="mt-6">
-          <InterviewDetailsCard 
-            details={interviewDetails}
-            application={application}
-          />
-        </div>
-      )}
 
       {/* Interview Reviews Section */}
       {interviewReviews.length > 0 && (
@@ -761,65 +772,57 @@ const ScheduleInterviewModal = ({ application, onClose, onSchedule, updating }) 
   };
 
   return (
+    // Style Schedule Interview Modal with lumen green theme and improved layout
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Schedule Interview</h3>
+    <div className="bg-gradient-to-br from-purple-50 to-purple-200 border border-purple-300 rounded-lg p-6 w-full max-w-lg shadow-xl">
+        <h3 className="text-lg font-semibold mb-4 text-purple-800">Schedule Interview</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Primary Interviewer Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.primary_interviewer_name}
-              onChange={(e) => handleChange('primary_interviewer_name', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="John Smith"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Primary Interviewer Email *
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.primary_interviewer_email}
-              onChange={(e) => handleChange('primary_interviewer_email', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="john.smith@company.com"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Backup Interviewer Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.backup_interviewer_name}
-              onChange={(e) => handleChange('backup_interviewer_name', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="Jane Doe"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Backup Interviewer Email *
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.backup_interviewer_email}
-              onChange={(e) => handleChange('backup_interviewer_email', e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="jane.doe@company.com"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Interviewer Name *</label>
+              <input
+                type="text"
+                required
+                value={formData.primary_interviewer_name}
+                onChange={(e) => handleChange('primary_interviewer_name', e.target.value)}
+                className="w-full border border-purple-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-50 bg-white/80"
+                placeholder="John Smith"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Primary Interviewer Email *</label>
+              <input
+                type="email"
+                required
+                value={formData.primary_interviewer_email}
+                onChange={(e) => handleChange('primary_interviewer_email', e.target.value)}
+                className="w-full border border-purple-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-50 bg-white/80"
+                placeholder="john.smith@company.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Interviewer Name *</label>
+              <input
+                type="text"
+                required
+                value={formData.backup_interviewer_name}
+                onChange={(e) => handleChange('backup_interviewer_name', e.target.value)}
+                className="w-full border border-purple-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-50 bg-white/80"
+                placeholder="Jane Doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Interviewer Email *</label>
+              <input
+                type="email"
+                required
+                value={formData.backup_interviewer_email}
+                onChange={(e) => handleChange('backup_interviewer_email', e.target.value)}
+                className="w-full border border-purple-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-50 bg-white/80"
+                placeholder="jane.doe@company.com"
+              />
+            </div>
           </div>
 
           <div className="flex space-x-3 pt-4">
@@ -834,7 +837,7 @@ const ScheduleInterviewModal = ({ application, onClose, onSchedule, updating }) 
             <button
               type="submit"
               disabled={updating}
-              className="flex-1 btn-primary"
+              className="flex-1 inline-flex justify-center items-center px-4 py-2 rounded-md text-white bg-[#AF69ED] hover:bg-[BF92E4] transition-colors shadow-sm"
             >
               {updating ? 'Scheduling...' : 'Schedule Interview'}
             </button>
@@ -846,10 +849,22 @@ const ScheduleInterviewModal = ({ application, onClose, onSchedule, updating }) 
 };
 
 // Interview Details Card Component
-const InterviewDetailsCard = ({ details, application }) => {
+const InterviewDetailsCard = ({ details, application, updating, onScheduleClick }) => {
   return (
-    <div className="card">
-      <h3 className="text-lg font-semibold mb-3">Interview Details</h3>
+    <div className="card bg-gradient-to-br from-teal-50 to-emerald-100">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="text-lg font-semibold">Interview Details</h3>
+        {application.status === 'slot_selected' && (
+          <button
+            onClick={onScheduleClick}
+            disabled={updating}
+            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#AF69ED] hover:bg-[#BF92E4] transition-colors shadow-sm"
+          >
+            <UserPlusIcon className="h-4 w-4 mr-2" />
+            Schedule Interview
+          </button>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="space-y-2">

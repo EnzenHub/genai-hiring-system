@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate,useLocation } from 'react-router-dom';
 import { jobService } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -17,6 +17,7 @@ const EditJob = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const location = useLocation();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -152,7 +153,7 @@ const EditJob = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
-          <button onClick={() => navigate('/jobs')} className="mr-4">
+          <button onClick={() => navigate(location.state?.fromDashboard === 'hr' ? '/hr-dashboard' : '/jobs')} className="mr-4">
             <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
           </button>
           <div>
@@ -160,7 +161,8 @@ const EditJob = () => {
             <p className="text-gray-600">Error loading job</p>
           </div>
         </div>
-        <div className="card">
+        <div className="card-themed-red">
+          <h2 className="text-lg font-semibold mb-3 heading-gradient">Error</h2>
           <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
             {error}
           </div>
@@ -203,8 +205,8 @@ const EditJob = () => {
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
-            <div className="card">
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+            <div className="card-themed-yellow">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Basic Information</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -293,7 +295,7 @@ const EditJob = () => {
                       {formData.key_skills.map((skill, index) => (
                         <span
                           key={index}
-                          className="inline-block bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded"
+                          className="inline-block bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded ring-1 ring-inset ring-primary-200"
                         >
                           {skill}
                         </span>
@@ -308,8 +310,8 @@ const EditJob = () => {
           {/* Sidebar Form */}
           <div className="space-y-6">
             {/* Job Details */}
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Job Details</h3>
+            <div className="card-themed-cyan">
+              <h3 className="text-lg font-semibold mb-4 heading-gradient">Job Details</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -444,8 +446,8 @@ const EditJob = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="card">
-              <div className="space-y-3">
+           
+              <div className="space-y-4">
                 <button
                   type="submit"
                   disabled={saving}
@@ -473,7 +475,7 @@ const EditJob = () => {
                 </button>
               </div>
             </div>
-          </div>
+       
         </div>
       </form>
     </div>

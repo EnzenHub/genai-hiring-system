@@ -1,32 +1,14 @@
-# Python virtual environments and pip installations
-venv/
-env/
-ENV/
-.venv/
-.env/
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Ollama
-.ollama/
-
 # Node modules
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+**/node_modules/
 
-# Sensitive files (credentials, tokens, environment variables)
-credentials.json
-token.json
+# Sensitive files - Credentials and Tokens
 .env
+.env.*
 *.env
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+credentials.json
+**/credentials.json
+token.json
+**/token.json
+credentials*.json
+token*.json

@@ -44,17 +44,17 @@ const ApplicationStatus = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-gradient-to-br from-yellow-50 to-amber-100 text-amber-800 border-amber-200';
       case 'shortlisted':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-gradient-to-br from-sky-50 to-blue-100 text-blue-800 border-blue-200';
       case 'interview_scheduled':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-gradient-to-br from-violet-50 to-fuchsia-100 text-purple-800 border-purple-200';
       case 'hired':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-gradient-to-br from-green-50 to-emerald-100 text-green-800 border-green-200';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-gradient-to-br from-rose-50 to-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gradient-to-br from-gray-50 to-zinc-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -112,13 +112,13 @@ const ApplicationStatus = () => {
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-600 bg-green-50';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (score >= 80) return 'text-green-700 bg-gradient-to-br from-green-50 to-emerald-100 border-green-200';
+    if (score >= 60) return 'text-yellow-700 bg-gradient-to-br from-yellow-50 to-amber-100 border-yellow-200';
+    return 'text-red-700 bg-gradient-to-br from-rose-50 to-red-100 border-red-200';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -131,33 +131,25 @@ const ApplicationStatus = () => {
           </Link>
           
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Application Status</h1>
-            <p className="text-gray-600">
-              Enter your reference number to track your application progress
-            </p>
+            <h1 className="text-3xl font-bold text-primary-900 mb-2 drop-shadow-sm">Check Application Status</h1>
+            <p className="text-gray-700">Enter your reference number to track your application progress</p>
           </div>
         </div>
 
         {/* Search Form */}
-        <div className="card mb-8">
+        <div className="card bg-gradient-to-br from-indigo-50 to-blue-100 backdrop-blur border border-blue-200 rounded-2xl shadow-sm mb-8">
           <form onSubmit={handleSearch} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Application Reference Number
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Application Reference Number</label>
               <div className="flex gap-4">
                 <input
                   type="text"
                   value={referenceNumber}
                   onChange={(e) => setReferenceNumber(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 border border-blue-200 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white/80"
                   placeholder="Enter your reference number (e.g., APP-12345-67890)"
                 />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary flex items-center px-6"
-                >
+                <button type="submit" disabled={loading} className="btn-primary flex items-center px-6">
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   ) : (
@@ -167,9 +159,9 @@ const ApplicationStatus = () => {
                 </button>
               </div>
             </div>
-            
+
             {error && (
-              <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div className="bg-gradient-to-br from-red-50 to-rose-100 border border-rose-300 text-rose-800 px-4 py-3 rounded-md text-sm">
                 {error}
               </div>
             )}
@@ -180,7 +172,7 @@ const ApplicationStatus = () => {
         {application && (
           <div className="space-y-6">
             {/* Status Overview */}
-            <div className={`card border-2 ${getStatusColor(application.status)}`}>
+            <div className={`card backdrop-blur rounded-2xl shadow-sm border-2 ${getStatusColor(application.status)}`}>
               <div className="flex items-center">
                 <div className="flex-shrink-0 mr-4">
                   {getStatusIcon(application.status)}
@@ -200,7 +192,7 @@ const ApplicationStatus = () => {
               {/* Application Details */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Basic Information */}
-                <div className="card">
+                <div className="card bg-gradient-to-br from-rose-50 to-pink-100 backdrop-blur border border-pink-200 rounded-2xl shadow-sm">
                   <h3 className="text-lg font-semibold mb-4">Application Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center">
@@ -245,7 +237,7 @@ const ApplicationStatus = () => {
 
                 {/* AI Analysis Results */}
                 {(application.ai_score || application.match_score || application.ats_score) && (
-                  <div className="card">
+                  <div className="card bg-gradient-to-br from-amber-50 to-orange-100 backdrop-blur border border-orange-200 rounded-2xl shadow-sm">
                     <h3 className="text-lg font-semibold mb-4">AI Analysis Results</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {application.ai_score && (
@@ -291,7 +283,7 @@ const ApplicationStatus = () => {
                 )}
 
                 {/* Timeline */}
-                <div className="card">
+                <div className="card bg-gradient-to-br from-purple-50 to-violet-100 backdrop-blur border border-violet-200 rounded-2xl shadow-sm">
                   <h3 className="text-lg font-semibold mb-4">Application Timeline</h3>
                   <div className="space-y-4">
                     <div className="flex items-start">
@@ -343,7 +335,7 @@ const ApplicationStatus = () => {
               {/* Sidebar */}
               <div className="space-y-6">
                 {/* Next Steps */}
-                <div className="card">
+                <div className="card bg-gradient-to-br from-sky-50 to-cyan-100 backdrop-blur border border-cyan-200 rounded-2xl shadow-sm">
                   <h3 className="text-lg font-semibold mb-3">What's Next?</h3>
                   <div className="space-y-3 text-sm">
                     {application.status === 'pending' && (
@@ -394,7 +386,7 @@ const ApplicationStatus = () => {
                 </div>
 
                 {/* Contact Information */}
-                <div className="card">
+                <div className="card bg-gradient-to-br from-lime-50 to-green-100 backdrop-blur border border-lime-200 rounded-2xl shadow-sm">
                   <h3 className="text-lg font-semibold mb-3">Need Help?</h3>
                   <div className="text-sm space-y-2">
                     <p className="text-gray-600">
@@ -411,7 +403,7 @@ const ApplicationStatus = () => {
                 </div>
 
                 {/* Related Jobs */}
-                <div className="card">
+                <div className="card bg-gradient-to-br from-zinc-50 to-stone-100 backdrop-blur border border-stone-200 rounded-2xl shadow-sm">
                   <h3 className="text-lg font-semibold mb-3">More Opportunities</h3>
                   <Link to="/careers" className="btn-secondary w-full text-center">
                     Browse Open Positions
@@ -424,21 +416,19 @@ const ApplicationStatus = () => {
 
         {/* How to Find Reference Number */}
         {!application && (
-          <div className="card">
+          <div className="card bg-gradient-to-br from-zinc-50 to-stone-100 backdrop-blur border border-stone-200 rounded-2xl shadow-sm">
             <h3 className="text-lg font-semibold mb-3">How to Find Your Reference Number</h3>
-            <div className="text-sm text-gray-600 space-y-2">
+            <div className="text-sm text-gray-700 space-y-2">
               <p>Your application reference number was provided when you submitted your application. You can find it:</p>
               <ul className="list-disc ml-5 space-y-1">
                 <li>In the confirmation email sent to your registered email address</li>
                 <li>On the application confirmation page after submission</li>
                 <li>It follows the format: APP-XXXXX-XXXXX</li>
               </ul>
-              <p className="mt-3">
-                If you can't find your reference number, please contact our HR team at careers@company.com
-              </p>
+              <p className="mt-3">If you can't find your reference number, please contact our HR team at careers@company.com</p>
             </div>
           </div>
-        )}
+          )}
       </div>
     </div>
   );

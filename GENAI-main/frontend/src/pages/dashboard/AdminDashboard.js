@@ -3,13 +3,10 @@ import { Link } from 'react-router-dom';
 import { jobService } from '../../services/jobService';
 import { applicationService } from '../../services/applicationService';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  UsersIcon,
+import {
   BriefcaseIcon,
   DocumentTextIcon,
-  BuildingOfficeIcon,
   ChartBarIcon,
-  CogIcon,
   EyeIcon,
   CheckCircleIcon,
   GlobeAltIcon,
@@ -47,7 +44,7 @@ const AdminDashboard = () => {
       const pendingJobs = allJobs.filter(job => job.status === 'pending_approval');
 
       // Load recent jobs
-      const recentJobsData = await jobService.getJobs({ 
+      const recentJobsData = await jobService.getJobs({
         limit: 5,
         sort: 'created_at',
         order: 'desc'
@@ -56,26 +53,24 @@ const AdminDashboard = () => {
 
       // Load applications for stats
       const allApplications = await applicationService.getApplications({ limit: 1000 });
-      
+
       // Calculate date-based stats
       const today = new Date();
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       const todayStr = today.toDateString();
-      
-      const todayApplications = allApplications.filter(app => 
+
+      const todayApplications = allApplications.filter(app =>
         new Date(app.created_at).toDateString() === todayStr
       );
-      
-      const weeklyApplications = allApplications.filter(app => 
-        new Date(app.created_at) >= weekAgo
-      );
+
+      const weeklyApplications = allApplications.filter(app => new Date(app.created_at) >= weekAgo);
 
       // Calculate top performing jobs (most applications)
       const jobApplicationCounts = {};
       allApplications.forEach(app => {
         jobApplicationCounts[app.job_id] = (jobApplicationCounts[app.job_id] || 0) + 1;
       });
-      
+
       const topJobs = allJobs
         .map(job => ({
           ...job,
@@ -83,20 +78,19 @@ const AdminDashboard = () => {
         }))
         .sort((a, b) => b.applicationCount - a.applicationCount)
         .slice(0, 5);
-      
+
       setTopPerformingJobs(topJobs);
 
       setStats({
         totalJobs: allJobs.length,
         publishedJobs: publishedJobs.length,
         totalApplications: allApplications.length,
-        totalUsers: 0, // We'd need a users endpoint for this
+        totalUsers: 0, // users endpoint not available yet
         approvedJobs: approvedJobs.length,
         pendingJobs: pendingJobs.length,
         todayApplications: todayApplications.length,
         weeklyApplications: weeklyApplications.length
       });
-
     } catch (err) {
       setError('Failed to load dashboard data');
       console.error('Error loading admin dashboard:', err);
@@ -112,7 +106,7 @@ const AdminDashboard = () => {
   const handleJobPublish = async (jobId) => {
     try {
       await jobService.publishJob(jobId);
-      loadDashboardData(); // Reload data
+      loadDashboardData();
     } catch (err) {
       setError('Failed to publish job');
       console.error('Error publishing job:', err);
@@ -122,7 +116,7 @@ const AdminDashboard = () => {
   const handleJobApprove = async (jobId) => {
     try {
       await jobService.approveJob(jobId);
-      loadDashboardData(); // Reload data
+      loadDashboardData();
     } catch (err) {
       setError('Failed to approve job');
       console.error('Error approving job:', err);
@@ -172,7 +166,7 @@ const AdminDashboard = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">System administration and analytics</p>
+        <p className="text-gray-700 ml-2">Overview of System administration and analytics</p>
       </div>
 
       {/* Error Message */}
@@ -182,90 +176,90 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {/* Main Stats Grid */}
+      {/* Main Stats Grid - Themed */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card">
+        <div className="card bg-gradient-to-br from-cyan-50 to-cyan-100 ring-1 ring-inset ring-cyan-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <BriefcaseIcon className="h-8 w-8 text-blue-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-cyan-200">
+              <BriefcaseIcon className="h-8 w-8 text-cyan-700" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Jobs</p>
+              <p className="text-sm font-medium text-gray-700">Total Jobs</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalJobs}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card bg-gradient-to-br from-emerald-50 to-emerald-100 ring-1 ring-inset ring-emerald-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <GlobeAltIcon className="h-8 w-8 text-green-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-emerald-200">
+              <GlobeAltIcon className="h-8 w-8 text-emerald-700" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Published Jobs</p>
+              <p className="text-sm font-medium text-gray-700">Published Jobs</p>
               <p className="text-2xl font-bold text-gray-900">{stats.publishedJobs}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 ring-1 ring-inset ring-fuchsia-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <DocumentTextIcon className="h-8 w-8 text-purple-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-fuchsia-200">
+              <DocumentTextIcon className="h-8 w-8 text-fuchsia-700" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Applications</p>
+              <p className="text-sm font-medium text-gray-700">Total Applications</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalApplications}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card bg-gradient-to-br from-amber-50 to-amber-100 ring-1 ring-inset ring-amber-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ExclamationTriangleIcon className="h-8 w-8 text-yellow-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-amber-200">
+              <ExclamationTriangleIcon className="h-8 w-8 text-amber-700" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Pending Approvals</p>
+              <p className="text-sm font-medium text-gray-700">Pending Approvals</p>
               <p className="text-2xl font-bold text-gray-900">{stats.pendingJobs}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Secondary Stats */}
+      {/* Secondary Stats - Themed */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card">
+        <div className="card bg-gradient-to-br from-indigo-50 to-indigo-100 ring-1 ring-inset ring-indigo-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CalendarDaysIcon className="h-6 w-6 text-blue-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-indigo-200">
+              <CalendarDaysIcon className="h-6 w-6 text-indigo-700" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Today's Applications</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-700">Today's Applications</p>
               <p className="text-xl font-bold text-gray-900">{stats.todayApplications}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card bg-gradient-to-br from-emerald-50 to-emerald-100 ring-1 ring-inset ring-emerald-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ArrowTrendingUpIcon className="h-6 w-6 text-green-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-emerald-200">
+              <ArrowTrendingUpIcon className="h-6 w-6 text-emerald-700" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">This Week</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-700">This Week</p>
               <p className="text-xl font-bold text-gray-900">{stats.weeklyApplications}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="card bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-inset ring-blue-200">
           <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CheckCircleIcon className="h-6 w-6 text-blue-600" />
+            <div className="flex-shrink-0 rounded-xl p-2 bg-white/70 ring-1 ring-inset ring-blue-200">
+              <CheckCircleIcon className="h-6 w-6 text-blue-700" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Approved Jobs</p>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-700">Approved Jobs</p>
               <p className="text-xl font-bold text-gray-900">{stats.approvedJobs}</p>
             </div>
           </div>
@@ -274,7 +268,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Jobs */}
-        <div className="card">
+        <div className="card bg-gradient-to-br from-sky-50 to-sky-100 ring-1 ring-inset ring-sky-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Recent Jobs</h2>
             <Link to="/jobs" className="text-primary-600 hover:text-primary-700 text-sm">
@@ -285,7 +279,7 @@ const AdminDashboard = () => {
           {recentJobs.length > 0 ? (
             <div className="space-y-4">
               {recentJobs.map((job) => (
-                <div key={job.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={job.id} className="rounded-lg p-4 bg-white/70 ring-1 ring-inset ring-sky-200">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{job.title}</h3>
@@ -304,7 +298,7 @@ const AdminDashboard = () => {
                     <div className="flex space-x-2 ml-4">
                       <Link
                         to={`/jobs/${job.id}`}
-                        className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-md"
+                        className="p-2 text-blue-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
                         title="View Job"
                       >
                         <EyeIcon className="h-4 w-4" />
@@ -312,7 +306,7 @@ const AdminDashboard = () => {
                       {job.status === 'pending_approval' && (
                         <button
                           onClick={() => handleJobApprove(job.id)}
-                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md"
+                          className="p-2 text-green-700 hover:text-green-600 hover:bg-green-50 rounded-md"
                           title="Approve Job"
                         >
                           <CheckCircleIcon className="h-4 w-4" />
@@ -341,7 +335,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Top Performing Jobs */}
-        <div className="card">
+        <div className="card bg-gradient-to-br from-rose-50 to-pink-100 ring-1 ring-inset ring-rose-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Top Performing Jobs</h2>
             <Link to="/jobs" className="text-primary-600 hover:text-primary-700 text-sm">
@@ -352,7 +346,7 @@ const AdminDashboard = () => {
           {topPerformingJobs.length > 0 ? (
             <div className="space-y-4">
               {topPerformingJobs.map((job) => (
-                <div key={job.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={job.id} className="rounded-lg p-4 bg-white/70 ring-1 ring-inset ring-rose-200">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{job.title}</h3>
@@ -390,51 +384,51 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Themed links */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link
             to="/jobs?status=pending_approval"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="flex items-center p-4 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100 ring-1 ring-inset ring-amber-200 hover:shadow-md transition"
           >
-            <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600 mr-3" />
+            <ExclamationTriangleIcon className="h-6 w-6 text-amber-600 mr-3" />
             <div>
               <h3 className="font-medium">Review Approvals</h3>
-              <p className="text-sm text-gray-600">Approve pending jobs</p>
+              <p className="text-sm text-gray-700">Approve pending jobs</p>
             </div>
           </Link>
 
           <Link
             to="/jobs?status=approved"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="flex items-center p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-inset ring-blue-200 hover:shadow-md transition"
           >
             <GlobeAltIcon className="h-6 w-6 text-blue-600 mr-3" />
             <div>
               <h3 className="font-medium">Publish Jobs</h3>
-              <p className="text-sm text-gray-600">Make jobs public</p>
+              <p className="text-sm text-gray-700">Make jobs public</p>
             </div>
           </Link>
 
           <Link
             to="/applications"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="flex items-center p-4 rounded-lg bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 ring-1 ring-inset ring-fuchsia-200 hover:shadow-md transition"
           >
-            <DocumentTextIcon className="h-6 w-6 text-purple-600 mr-3" />
+            <DocumentTextIcon className="h-6 w-6 text-fuchsia-600 mr-3" />
             <div>
               <h3 className="font-medium">View Applications</h3>
-              <p className="text-sm text-gray-600">Monitor all applications</p>
+              <p className="text-sm text-gray-700">Monitor all applications</p>
             </div>
           </Link>
 
           <Link
             to="/jobs"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="flex items-center p-4 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 ring-1 ring-inset ring-emerald-200 hover:shadow-md transition"
           >
-            <ChartBarIcon className="h-6 w-6 text-green-600 mr-3" />
+            <ChartBarIcon className="h-6 w-6 text-emerald-600 mr-3" />
             <div>
               <h3 className="font-medium">Analytics</h3>
-              <p className="text-sm text-gray-600">System metrics</p>
+              <p className="text-sm text-gray-700">System metrics</p>
             </div>
           </Link>
         </div>

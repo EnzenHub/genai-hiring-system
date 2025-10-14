@@ -32,7 +32,6 @@ import ApplicationStatus from './pages/public/ApplicationStatus';
 import SlotSelection from './pages/public/SlotSelection';
 import InterviewerReview from './pages/public/InterviewerReview';
 import ResumeUpdate from './pages/ResumeUpdate';
-
 // Layout
 import DashboardLayout from './components/layout/DashboardLayout';
 import PublicLayout from './components/layout/PublicLayout';

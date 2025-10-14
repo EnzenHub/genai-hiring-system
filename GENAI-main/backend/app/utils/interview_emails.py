@@ -64,7 +64,7 @@ Candidate Details:
 ACTION REQUIRED:
 Please log into the HR dashboard and click "Fetch Availability" to proceed with interview scheduling.
 
-Dashboard Link: http://localhost:3000/applications/{application_id}
+Dashboard Link: http://149.102.158.71:6003/applications/{application_id}
 
 Best regards,
 GenAI Hiring System
@@ -89,7 +89,7 @@ GenAI Hiring System
             <p><strong>ACTION REQUIRED:</strong><br>
             Please log into the HR dashboard and click "Fetch Availability" to proceed with interview scheduling.</p>
             
-            <p><a href="http://localhost:3000/applications/{application_id}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Application</a></p>
+            <p><a href="http://149.102.158.71:6003/applications/{application_id}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Application</a></p>
             
             <br>
             <p>Best regards,<br><strong>GenAI Hiring System</strong></p>
@@ -118,7 +118,7 @@ Please select your preferred time slot from the available options below:
 AVAILABLE SLOTS (All times are 1-hour interviews):
 {slots_text}
 
-To select your slot, please click here: http://localhost:3000/select-slot/{application_id}
+To select your slot, please click here: http://149.102.158.71:6003/select-slot/{application_id}
 
 If none of these slots work for you, please reply to this email with your preferred times.
 
@@ -145,7 +145,7 @@ GenAI Hiring Team
                 {slots_html}
             </ul>
             
-            <p><a href="http://localhost:3000/select-slot/{application_id}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Select Your Slot</a></p>
+            <p><a href="http://149.102.158.71:6003/select-slot/{application_id}" style="background-color: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Select Your Slot</a></p>
             
             <p><em>If none of these slots work for you, please reply to this email with your preferred times.</em></p>
             

@@ -57,40 +57,46 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+    <div
+      className="min-h-screen relative"
+      style={{
+        backgroundImage: "url(/images/Media.jpeg)",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/70" />
+
+      {/* Centered card */}
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-black rounded-2xl ">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <img src="/images/Nxzen.jpg" alt="Nxzen logo" className="h-12 w-16" />
+          </div>
+
+          {/* Title */}
+          <h2 className="text-center text-xl font-semibold text-white mb-6">
+            Create Account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/login"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+          {/* Error */}
           {error && (
-            <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-md">
+            <div className="mb-4 bg-red-900/30 border border-red-500 text-red-200 px-4 py-3 rounded-md">
               {error}
             </div>
           )}
-          
-          <div className="space-y-4">
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
+              <label htmlFor="full_name" className="sr-only">Full Name</label>
               <input
                 id="full_name"
                 name="full_name"
                 type="text"
                 required
-                className="input-field"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Your full name"
                 value={formData.full_name}
                 onChange={handleChange}
@@ -98,16 +104,14 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+              <label htmlFor="email" className="sr-only">Email Address</label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="input-field"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="your@email.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -115,14 +119,12 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="user_type" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
+              <label htmlFor="user_type" className="sr-only">Role</label>
               <select
                 id="user_type"
                 name="user_type"
                 required
-                className="input-field"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 value={formData.user_type}
                 onChange={handleChange}
               >
@@ -133,16 +135,14 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label htmlFor="password" className="sr-only">Password</label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="new-password"
                 required
-                className="input-field"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
@@ -150,31 +150,34 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+              <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 autoComplete="new-password"
                 required
-                className="input-field"
+                className="block w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Confirm password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
               {formData.password !== formData.confirmPassword && formData.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">Passwords do not match</p>
+                <p className="mt-1 text-sm text-red-400">Passwords do not match</p>
               )}
             </div>
-          </div>
 
-          <div>
+            {/* Sign-in link */}
+            <div className="flex justify-end">
+              <Link to="/login" className="text-xs text-green-400 hover:text-green-300">
+                Already have an account? Sign In
+              </Link>
+            </div>
+
             <button
               type="submit"
               disabled={isLoading || formData.password !== formData.confirmPassword}
-              className="btn-primary w-full"
+              className="w-full py-2 px-4 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -185,8 +188,8 @@ const Register = () => {
                 'Create Account'
               )}
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

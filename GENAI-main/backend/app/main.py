@@ -14,12 +14,34 @@ app = FastAPI(
     debug=settings.debug
 )
 
-# Configure CORS
+# Configure CORS - Dynamic origins based on environment
 origins = [
-    "http://localhost:3000",
+    "http://149.102.158.71:6003",
     "http://127.0.0.1:3000",
-    f"http://{settings.api_host}:3000",
+    "http://149.102.158.71:6003",
+    "http://127.0.0.1:6003",
+    f"http://{settings.api_host}:6003",
 ]
+
+# Add FRONTEND_URL from environment if set
+if hasattr(settings, 'frontend_url') and settings.frontend_url:
+    frontend_url = settings.frontend_url
+    if frontend_url not in origins:
+        origins.append(frontend_url)
+    # Also add without trailing slash
+    if frontend_url.endswith('/'):
+        origins.append(frontend_url.rstrip('/'))
+
+# Add common production origins
+production_origins = [
+    "http://149.102.158.71:6003",
+    "http://149.102.158.71:3000",
+]
+for origin in production_origins:
+    if origin not in origins:
+        origins.append(origin)
+
+print(f"🌐 CORS allowed origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,7 +49,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
-    expose_headers=["*"]
+    expose_headers=["*"],
+    max_age=3600  # Cache preflight requests for 1 hour
 )
 
 # Create upload directory
