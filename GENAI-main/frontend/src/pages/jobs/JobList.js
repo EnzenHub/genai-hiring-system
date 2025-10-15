@@ -16,6 +16,7 @@ import {
   ArrowUpRightIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import Swal from 'sweetalert2';
 
 const JobList = () => {
   const { user } = useAuth();
@@ -65,50 +66,109 @@ const JobList = () => {
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (!window.confirm('Are you sure you want to delete this job?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Delete Job?',
+      text: 'This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      heightAuto: false,
+    });
+    if (!result.isConfirmed) return;
 
     try {
       await jobService.deleteJob(jobId);
       setJobs(jobs.filter(job => job.id !== jobId));
+      Swal.fire({
+        title: 'Deleted',
+        text: 'Job deleted successfully.',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } catch (err) {
       setError('Failed to delete job');
       console.error('Error deleting job:', err);
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to delete job',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     }
   };
 
   const handleApproveJob = async (jobId) => {
-    if (!window.confirm('Are you sure you want to approve this job?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Approve Job?',
+      text: 'This will mark the job as approved.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Approve',
+      cancelButtonText: 'Cancel',
+      heightAuto: false,
+    });
+    if (!result.isConfirmed) return;
 
     try {
       await jobService.approveJob(jobId);
       // Reload jobs to get updated status
       loadJobs();
-      alert('Job approved successfully. You can now publish it to careers page.');
+      Swal.fire({
+        title: 'Approved',
+        text: 'Job approved successfully. You can now publish it to the careers page.',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } catch (err) {
       setError('Failed to approve job');
       console.error('Error approving job:', err);
-      alert('Failed to approve job. ' + (err.response?.data?.detail || err.message));
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to approve job',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     }
   };
 
   const handlePublishJob = async (jobId) => {
-    if (!window.confirm('Are you sure you want to publish this job to the careers page?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: 'Publish Job?',
+      text: 'This will make the job visible on the careers page.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Publish',
+      cancelButtonText: 'Cancel',
+      heightAuto: false,
+    });
+    if (!result.isConfirmed) return;
 
     try {
       await jobService.publishJob(jobId);
       // Reload jobs to get updated status
       loadJobs();
-      alert('Job published successfully. It is now visible on the careers page.');
+      Swal.fire({
+        title: 'Published',
+        text: 'Job published successfully. It is now visible on the careers page.',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } catch (err) {
       setError('Failed to publish job');
       console.error('Error publishing job:', err);
-      alert('Failed to publish job. ' + (err.response?.data?.detail || err.message));
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to publish job',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     }
   };
 

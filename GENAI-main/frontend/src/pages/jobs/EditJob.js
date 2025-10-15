@@ -24,16 +24,15 @@ const EditJob = () => {
     title: '',
     short_description: '',
     description: '',
-    requirements: '',
-    benefits: '',
     department: '',
     location: '',
     job_type: '',
     experience_level: '',
-    salary_min: '',
-    salary_max: '',
+    salary_range: '',
     key_skills: [],
-    deadline: '',
+    required_experience: '',
+    certifications: [],
+    additional_requirements: [],
     status: 'draft'
   });
 
@@ -55,16 +54,15 @@ const EditJob = () => {
         title: job.title || '',
         short_description: job.short_description || '',
         description: job.description || '',
-        requirements: job.requirements || '',
-        benefits: job.benefits || '',
         department: job.department || '',
         location: job.location || '',
         job_type: job.job_type || '',
         experience_level: job.experience_level || '',
-        salary_min: job.salary_min || '',
-        salary_max: job.salary_max || '',
+        salary_range: job.salary_range || '',
         key_skills: job.key_skills || [],
-        deadline: job.deadline ? job.deadline.split('T')[0] : '',
+        required_experience: job.required_experience || '',
+        certifications: job.certifications || [],
+        additional_requirements: job.additional_requirements || [],
         status: job.status || 'draft'
       });
     } catch (err) {
@@ -95,6 +93,14 @@ const EditJob = () => {
     }));
   };
 
+  const handleListChange = (field, text) => {
+    const items = text.split(',').map(item => item.trim()).filter(item => item);
+    setFormData(prev => ({
+      ...prev,
+      [field]: items
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -109,10 +115,19 @@ const EditJob = () => {
       setSuccess('');
 
       const jobData = {
-        ...formData,
-        salary_min: formData.salary_min ? parseInt(formData.salary_min) : null,
-        salary_max: formData.salary_max ? parseInt(formData.salary_max) : null,
-        deadline: formData.deadline || null
+        title: formData.title,
+        short_description: formData.short_description,
+        description: formData.description,
+        department: formData.department,
+        location: formData.location,
+        job_type: formData.job_type,
+        experience_level: formData.experience_level,
+        salary_range: formData.salary_range,
+        key_skills: formData.key_skills,
+        required_experience: formData.required_experience,
+        certifications: formData.certifications,
+        additional_requirements: formData.additional_requirements,
+        status: formData.status
       };
 
       await jobService.updateJob(id, jobData);
@@ -253,29 +268,15 @@ const EditJob = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Requirements
+                    Required Experience
                   </label>
                   <textarea
-                    name="requirements"
-                    value={formData.requirements}
+                    name="required_experience"
+                    value={formData.required_experience}
                     onChange={handleInputChange}
                     rows={4}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Required skills, qualifications, experience..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Benefits
-                  </label>
-                  <textarea
-                    name="benefits"
-                    value={formData.benefits}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Employee benefits, perks, compensation details..."
+                    placeholder="Describe the required experience (years, areas, levels)..."
                   />
                 </div>
 
@@ -302,6 +303,32 @@ const EditJob = () => {
                       ))}
                     </div>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Certifications (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.certifications.join(', ')}
+                    onChange={(e) => handleListChange('certifications', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="AWS Certified Developer, PMP, etc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Additional Requirements (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.additional_requirements.join(', ')}
+                    onChange={(e) => handleListChange('additional_requirements', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="On-call availability, travel, specific tooling, etc."
+                  />
                 </div>
               </div>
             </div>
@@ -380,47 +407,21 @@ const EditJob = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Min Salary
-                    </label>
-                    <input
-                      type="number"
-                      name="salary_min"
-                      value={formData.salary_min}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="50000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Max Salary
-                    </label>
-                    <input
-                      type="number"
-                      name="salary_max"
-                      value={formData.salary_max}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="80000"
-                    />
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Application Deadline
+                    Salary Range
                   </label>
                   <input
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
+                    type="text"
+                    name="salary_range"
+                    value={formData.salary_range}
                     onChange={handleInputChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., ₹12–15 LPA or 50000-80000"
                   />
                 </div>
+
+                
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

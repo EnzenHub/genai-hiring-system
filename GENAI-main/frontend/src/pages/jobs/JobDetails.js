@@ -238,26 +238,48 @@ const JobDetails = () => {
             </div>
           </div>
 
-          {/* Requirements */}
-          {job.requirements && (
+          {/* Required Experience */}
+          {job.required_experience && (
             <div className="card-themed-yellow">
-              <h2 className="text-lg font-semibold mb-4 heading-gradient">Requirements</h2>
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Required Experience</h2>
               <div className="prose max-w-none">
                 <div className="whitespace-pre-wrap text-gray-700">
-                  {job.requirements}
+                  {job.required_experience}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Benefits */}
-          {job.benefits && (
-            <div className="card-themed-red">
-              <h2 className="text-lg font-semibold mb-4 heading-gradient">Benefits</h2>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-gray-700">
-                  {job.benefits}
-                </div>
+          {/* Certifications */}
+          {job.certifications && Array.isArray(job.certifications) && job.certifications.length > 0 && (
+            <div className="card-themed-cyan">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Certifications</h2>
+              <div className="flex flex-wrap gap-2">
+                {job.certifications.map((cert, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-primary-100 text-primary-800 text-sm px-3 py-1 rounded-full ring-1 ring-inset ring-primary-200"
+                  >
+                    {cert}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Additional Requirements */}
+          {job.additional_requirements && Array.isArray(job.additional_requirements) && job.additional_requirements.length > 0 && (
+            <div className="card-themed-yellow">
+              <h2 className="text-lg font-semibold mb-4 heading-gradient">Additional Requirements</h2>
+              <div className="flex flex-wrap gap-2">
+                {job.additional_requirements.map((req, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-amber-100 text-amber-800 text-sm px-3 py-1 rounded-full ring-1 ring-inset ring-amber-200"
+                  >
+                    {req}
+                  </span>
+                ))}
               </div>
             </div>
           )}
@@ -327,13 +349,15 @@ const JobDetails = () => {
                 </div>
               )}
               {/* Salary Range */}
-              {(job.salary_min || job.salary_max) && (
+              {(job.salary_range || job.salary_min || job.salary_max) && (
                 <div className="flex items-center">
                   <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <div className="text-sm text-gray-500">Salary Range</div>
                     <div className="font-medium">
-                      {job.salary_min && job.salary_max
+                      {job.salary_range
+                        ? job.salary_range
+                        : job.salary_min && job.salary_max
                         ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
                         : job.salary_min
                         ? `From $${job.salary_min.toLocaleString()}`

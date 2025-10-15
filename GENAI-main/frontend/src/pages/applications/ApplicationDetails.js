@@ -111,14 +111,50 @@ const ApplicationDetails = () => {
   };
 
   const handleFetchAvailability = async () => {
+    // Confirm action before generating and sending availability
+    const resultConfirm = await Swal.fire({
+      title: 'Fetch Availability?',
+      text: 'This will generate interview slots and email the candidate.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Send Availability',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#AF69ED',
+      cancelButtonColor: '#6b7280',
+      heightAuto: false,
+    });
+
+    if (!resultConfirm.isConfirmed) return;
+
     try {
       setUpdating(true);
-      await interviewService.fetchAvailability(id);
+      const result = await interviewService.fetchAvailability(id);
       await loadApplication(); // Reload data
       setError('');
+
+      const fromDate = result?.slots_from ? new Date(result.slots_from).toLocaleDateString() : null;
+      const toDate = result?.slots_to ? new Date(result.slots_to).toLocaleDateString() : null;
+      const slotsInfo = result?.slots_count ? ` (${result.slots_count} slots)` : '';
+      const rangeInfo = fromDate && toDate ? `
+Slots cover: ${fromDate} to ${toDate}.` : '';
+
+      await Swal.fire({
+        title: 'Availability Requested',
+        text: `${result?.message ?? 'Availability slots generated and email sent.'}${slotsInfo}${rangeInfo ? `\n${rangeInfo}` : ''}`,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } catch (err) {
       setError('Failed to fetch availability slots');
       console.error('Error fetching availability:', err);
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to fetch availability slots',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } finally {
       setUpdating(false);
     }
@@ -176,15 +212,45 @@ const ApplicationDetails = () => {
 
 
   const handleFinalDecision = async (decision) => {
+    const isHire = decision === 'hired';
+    const resultConfirm = await Swal.fire({
+      title: isHire ? 'Hire Candidate?' : 'Reject Candidate?',
+      text: isHire
+        ? 'This will mark the candidate as hired and send an email notification.'
+        : 'This will mark the candidate as rejected and send an email notification.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: isHire ? 'Confirm Hire' : 'Confirm Reject',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: isHire ? '#AF69ED' : '#dc2626',
+      cancelButtonColor: '#6b7280',
+      heightAuto: false,
+    });
+
+    if (!resultConfirm.isConfirmed) return;
+
     try {
       setUpdating(true);
       const result = await interviewService.makeFinalDecision(id, decision);
       await loadApplication(); // Reload data
       setError('');
-      alert(result.message || `Candidate ${decision === 'hired' ? 'hired' : 'rejected'} successfully! Email notification sent.`);
+      await Swal.fire({
+        title: 'Success',
+        text: result?.message || `Candidate ${isHire ? 'hired' : 'rejected'} successfully! Email notification sent.`,
+        icon: 'success',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } catch (err) {
       setError('Failed to make final decision');
       console.error('Error making final decision:', err);
+      Swal.fire({
+        title: 'Error',
+        text: err.response?.data?.detail || 'Failed to make final decision',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        heightAuto: false,
+      });
     } finally {
       setUpdating(false);
     }
@@ -422,7 +488,7 @@ const ApplicationDetails = () => {
                 <button
                   onClick={() => handleFinalDecision('hired')}
                   disabled={updating}
-                  className="btn-success flex items-center"
+                  className="inline-flex items-center px-4 py-2 rounded-md text-white bg-[#AF69ED] hover:bg-[#BF92E4] shadow-sm transition-colors"
                 >
                   <CheckCircleIcon className="h-4 w-4 mr-2" />
                   Hire Candidate
@@ -632,7 +698,7 @@ const ApplicationDetails = () => {
                  </div>
                  <button
                    onClick={() => {
-                     const baseApiUrl = process.env.REACT_APP_API_URL || 'http://149.102.158.71:6002';
+                     const baseApiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
                      const resumePath = application.resume_url || `/uploads/${application.resume_filename}`;
                      const absoluteUrl = resumePath.startsWith('http') ? resumePath : `${baseApiUrl}${resumePath}`;
                      window.open(absoluteUrl, '_blank');
@@ -712,11 +778,19 @@ const ApplicationDetails = () => {
       {/* Interview Reviews Section */}
       {interviewReviews.length > 0 && (
         <div className="mt-6">
-          <div className="card">
-            <h3 className="text-lg font-semibold mb-4">Interview Reviews ({interviewReviews.length})</h3>
+          <div className="card bg-gradient-to-br from-violet-50 to-purple-100 backdrop-blur">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <EyeIcon className="h-5 w-5 text-purple-600" />
+                <h3 className="text-lg font-semibold">Interview Reviews</h3>
+              </div>
+              <span className="px-2 py-1 text-xs font-medium rounded-full bg-white/70 text-purple-700">
+                {interviewReviews.length} reviews
+              </span>
+            </div>
             <div className="space-y-6">
               {interviewReviews.map((review, index) => (
-                <div key={review.id || index} className="border border-gray-200 rounded-lg p-4">
+                <div key={review.id || index} className="rounded-lg p-4 bg-white/60 border border-white/70 shadow-sm hover:shadow-md transition">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="font-medium text-gray-900">
                       {review.interviewer_name || review.interviewer_email}
@@ -764,6 +838,19 @@ const ScheduleInterviewModal = ({ application, onClose, onSchedule, updating }) 
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const primaryEmail = (formData.primary_interviewer_email || '').trim().toLowerCase();
+    const backupEmail = (formData.backup_interviewer_email || '').trim().toLowerCase();
+
+    if (primaryEmail && backupEmail && primaryEmail === backupEmail) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Emails must differ',
+        text: 'Primary and Secondary interviewer emails cannot be the same.',
+        confirmButtonColor: '#AF69ED'
+      });
+      return;
+    }
+
     onSchedule(formData);
   };
 
@@ -959,8 +1046,13 @@ const InterviewReviewCard = ({ review, application, hideHeader = false }) => {
   };
 
   return (
-    <div className={hideHeader ? "" : "card"}>
-      {!hideHeader && <h3 className="text-lg font-semibold mb-4">Interview Review</h3>}
+    <div className={hideHeader ? "" : "card bg-gradient-to-br from-violet-50 to-purple-100 backdrop-blur"}>
+      {!hideHeader && (
+        <div className="flex items-center space-x-2 mb-4">
+          <EyeIcon className="h-5 w-5 text-purple-600" />
+          <h3 className="text-lg font-semibold">Interview Review</h3>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>

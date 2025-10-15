@@ -91,6 +91,12 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     create_tables()
+    
+    # Start the background scheduler for resume update emails
+    import asyncio
+    from .services.scheduler_service import run_background_scheduler
+    asyncio.create_task(run_background_scheduler())
+    print("✅ Background scheduler started for resume update emails")
 
 if __name__ == "__main__":
     import uvicorn

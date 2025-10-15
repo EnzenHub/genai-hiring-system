@@ -609,9 +609,14 @@ HR Team"""
                 if update_request.update_attempts_count < update_request.max_attempts:
                     # More attempts available, schedule next email
                     update_request.status = "llm_approved"  # Ready for next attempt
+                    update_request.next_email_due_at = datetime.utcnow() + timedelta(hours=24)  # Schedule next email in 24 hours
+                    
+                    # Keep application in resume_update_requested status (scoring service may have changed it)
+                    application.status = "resume_update_requested"
+                    
                     db.commit()
                     
-                    logger.info(f"Application {application.id} improved from {old_score:.1f} to {new_score:.1f} but still below threshold")
+                    logger.info(f"Application {application.id} improved from {old_score:.1f} to {new_score:.1f} but still below threshold. Next email scheduled for {update_request.next_email_due_at}")
                     
                     return {
                         "success": True,
@@ -620,7 +625,7 @@ HR Team"""
                         "new_score": new_score,
                         "improvement": new_score - old_score,
                         "attempts_remaining": update_request.max_attempts - update_request.update_attempts_count,
-                        "message": f"Your score improved from {old_score:.1f} to {new_score:.1f}, but hasn't reached our threshold of {self.shortlist_threshold} yet. You have {update_request.max_attempts - update_request.update_attempts_count} more attempt(s)."
+                        "message": f"Your score improved from {old_score:.1f} to {new_score:.1f}, but hasn't reached our threshold of {self.shortlist_threshold} yet. You have {update_request.max_attempts - update_request.update_attempts_count} more attempt(s). You will receive another opportunity email within 24 hours."
                     }
                 else:
                     # No more attempts, final rejection

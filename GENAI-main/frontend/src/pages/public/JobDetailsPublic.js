@@ -145,26 +145,48 @@ const JobDetailsPublic = () => {
               </div>
             </div>
 
-            {/* Requirements */}
-            {typeof job.requirements === 'string' && job.requirements.trim() && (
+            {/* Required Experience */}
+            {typeof job.required_experience === 'string' && job.required_experience.trim() && (
               <div className="card bg-gradient-to-br from-amber-50 to-yellow-100 backdrop-blur border border-amber-200 rounded-2xl shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">What We're Looking For</h2>
+                <h2 className="text-lg font-semibold mb-4">Required Experience</h2>
                 <div className="prose max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-gray-700 text-sm leading-relaxed">
-                    {job.requirements}
-                  </ReactMarkdown>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">
+                    {job.required_experience}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Benefits */}
-            {typeof job.benefits === 'string' && job.benefits.trim() && (
-              <div className="card bg-gradient-to-br from-rose-50 to-pink-100 backdrop-blur border border-rose-200 rounded-2xl shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">What We Offer</h2>
-                <div className="prose max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-gray-700 text-sm leading-relaxed">
-                    {job.benefits}
-                  </ReactMarkdown>
+            {/* Certifications */}
+            {job.certifications && Array.isArray(job.certifications) && job.certifications.length > 0 && (
+              <div className="card bg-gradient-to-br from-violet-50 to-fuchsia-100 backdrop-blur border border-violet-200 rounded-2xl shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Preferred Certifications</h2>
+                <div className="flex flex-wrap gap-3">
+                  {job.certifications.map((cert, index) => (
+                    <span
+                      key={index}
+                      className="inline-block bg-violet-100 text-violet-800 text-sm px-3 py-1 rounded-full ring-1 ring-inset ring-violet-200"
+                    >
+                      {cert}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional Requirements */}
+            {job.additional_requirements && Array.isArray(job.additional_requirements) && job.additional_requirements.length > 0 && (
+              <div className="card bg-gradient-to-br from-amber-50 to-yellow-100 backdrop-blur border border-amber-200 rounded-2xl shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Additional Requirements</h2>
+                <div className="flex flex-wrap gap-3">
+                  {job.additional_requirements.map((req, index) => (
+                    <span
+                      key={index}
+                      className="inline-block bg-amber-100 text-amber-800 text-sm px-3 py-1 rounded-full ring-1 ring-inset ring-amber-200"
+                    >
+                      {req}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
@@ -266,13 +288,15 @@ const JobDetailsPublic = () => {
                   </div>
                 )}
 
-                {(job.salary_min || job.salary_max) && (
+                {(job.salary_range || job.salary_min || job.salary_max) && (
                   <div className="flex items-start">
                     <CurrencyDollarIcon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
                     <div>
                       <div className="text-sm text-gray-500">Salary Range</div>
                       <div className="font-medium">
-                        {job.salary_min && job.salary_max 
+                        {job.salary_range
+                          ? job.salary_range
+                          : job.salary_min && job.salary_max 
                           ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
                           : job.salary_min 
                           ? `From $${job.salary_min.toLocaleString()}`

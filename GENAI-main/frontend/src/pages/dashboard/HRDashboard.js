@@ -120,6 +120,10 @@ const HRDashboard = () => {
         return 'bg-emerald-100 text-emerald-700 ring-emerald-200';
       case 'rejected':
         return 'bg-rose-100 text-rose-700 ring-rose-200';
+      case 'interview_confirmed':
+        return 'bg-indigo-100 text-indigo-700 ring-indigo-200';
+      case 'review_received':
+        return 'bg-purple-100 text-purple-700 ring-purple-200';
       default:
         return 'bg-gray-100 text-gray-700 ring-gray-200';
     }
@@ -142,6 +146,8 @@ const HRDashboard = () => {
         return 'Under Review';
       case 'resume_update_requested':
         return 'Resume Update Requested';
+      
+      
       default: {
         // Generic formatting: replace underscores with spaces and title-case each word
         const pretty = normalized.replace(/_/g, ' ');
